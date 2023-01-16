@@ -9,11 +9,13 @@ import (
 	"path/filepath"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/nbd-wtf/go-nostr"
 )
 
 type Config struct {
-	DataDir         string            `json:"-"`
-	PrivateKey      string            `json:"privatekey,omitempty"`
+	DataDir         string `json:"-"`
+	PrivateKey      string `json:"privatekey,omitempty"`
+	PublicKey       string
 	Following       []Follow          `json:"following"`
 	Relays          map[string]Policy `json:"relays,omitempty"`
 	FallbackRelays  []string          `json:"fallback_relays,omitempty"`
@@ -64,13 +66,10 @@ func handleConfig() (*Config, error) {
 	if len(config.FallbackRelays) == 0 {
 		config.FallbackRelays = []string{
 			"wss://nostr-pub.wellorder.net",
-			"wss://nostr-relay.wlvs.space",
-			"wss://relay.damus.io",
-			"wss://relay.nostr.info",
-			"wss://nostr-2.zebedee.cloud",
 			"wss://nostr.fmt.wiz.biz",
-			"wss://nostr.v0l.io",
+			"wss://nostr.zebedee.cloud",
 			"wss://nostr-relay.untethr.me",
+			"wss://nostr-relay.wlvs.space",
 		}
 	}
 
@@ -85,13 +84,9 @@ func handleConfig() (*Config, error) {
 	if len(config.WriteableRelays) == 0 {
 		config.WriteableRelays = []string{
 			"wss://nostr-pub.wellorder.net",
-			"wss://nostr-relay.wlvs.space",
-			"wss://relay.damus.io",
-			"wss://relay.nostr.info",
-			"wss://nostr-2.zebedee.cloud",
-			"wss://nostr.fmt.wiz.biz",
-			"wss://nostr.v0l.io",
 			"wss://nostr-relay.untethr.me",
+			"wss://relay.nostr.info",
+			"wss://nostr.fmt.wiz.biz",
 		}
 	}
 
@@ -102,6 +97,8 @@ func handleConfig() (*Config, error) {
 			"wss://relay.damus.io",
 		}
 	}
+
+	config.PublicKey, _ = nostr.GetPublicKey(config.PrivateKey)
 
 	return &config, nil
 }

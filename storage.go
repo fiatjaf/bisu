@@ -167,6 +167,13 @@ func (s *Store) GetLatestTimestampForChatMessages(chatId string) *time.Time {
 	return nil
 }
 
-func (s *Store) GetFollowedKeys(pubkey string) []string {
-	return nil
+func (s *Store) FollowKey(_, followedKey string) error {
+	_, err := s.db.Exec("INSERT INTO follows (pubkey) VALUES ($1)", followedKey)
+	return err
+}
+
+func (s *Store) GetFollowedKeys(_ string) []string {
+	var keys []string
+	s.db.Select(&keys, "SELECT pubkey FROM follows")
+	return keys
 }

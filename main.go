@@ -9,22 +9,38 @@ import (
 	"github.com/fiatjaf/norad2"
 )
 
-var nr *norad2.Core
+var (
+	nr     *norad2.Core
+	store  *Store
+	config *Config
+)
 
 func main() {
-	p := tea.NewProgram(initialModel())
-
-	config, err := handleConfig()
+	var err error
+	config, err = handleConfig()
 	if err != nil {
 		log.Fatal("failed to parse config: " + err.Error())
 	}
 
-	store := InitStore(config.DataDir)
+	store = InitStore(config.DataDir)
+	for _, f := range config.Following {
+		store.FollowKey(config.PublicKey, f.Key)
+		for _, url := range f.Relays {
+			store.IncrementRelayScoreForPubkey(f.Key, url, 1)
+		}
+	}
+
 	nr = norad2.New(store, norad2.Options{
-		FallbackRelays: []string{"wss://nostr-pub.wellorder.net"},
+		FallbackRelays: config.FallbackRelays,
 		AlwaysCheck:    []string{},
-		SafeRelays:     []string{},
+		SafeRelays:     config.SafeRelays,
 	})
+
+	m := initialModel()
+	log.Print("x")
+	m.homefeed = nr.GetCachedHomeFeedEvents(config.PublicKey, 99999999999999, 100)
+	log.Print("y")
+	p := tea.NewProgram(m)
 
 	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {

@@ -38,3 +38,7 @@ CREATE TABLE IF NOT EXISTS replaceable_events (
 
   UNIQUE (pubkey, kind)
 );
+
+CREATE TABLE IF NOT EXISTS follows (
+  pubkey TEXT
+);

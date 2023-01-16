@@ -1,10 +1,12 @@
 package main
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nbd-wtf/go-nostr"
 )
 
 type activeView uint
@@ -26,6 +28,8 @@ type Model struct {
 	input textarea.Model
 
 	screenSubject string
+
+	homefeed []*nostr.Event
 }
 
 type page interface {
@@ -92,5 +96,8 @@ func newTextarea() textarea.Model {
 		BorderForeground(activeBorderColor)
 
 	t.ShowLineNumbers = false
+
+	t.KeyMap.InsertNewline = key.NewBinding(key.WithKeys("shift+enter", "ctrl+m"))
+
 	return t
 }
