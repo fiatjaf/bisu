@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS profile_events (
   UNIQUE (pubkey, id)
 );
 
-CREATE INDEX IF NOT EXISTS ON profile_events (date);
+CREATE INDEX IF NOT EXISTS idx_profile_events_date ON profile_events (date);
 
 CREATE TABLE IF NOT EXISTS reply_events (
   root TEXT,
@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS reply_events (
   date INTEGER,
 
   UNIQUE (root, id)
-)
+);
 
-CREATE INDEX IF NOT EXISTS ON reply_events (date);
+CREATE INDEX IF NOT EXISTS idx_reply_events_date ON reply_events (date);
 
 CREATE TABLE IF NOT EXISTS replaceable_events (
   pubkey TEXT,

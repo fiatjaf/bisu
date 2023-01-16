@@ -20,6 +20,7 @@ type Model struct {
 	height int
 
 	active activeView
+	page   page
 
 	list  table.Model
 	input textarea.Model
@@ -27,9 +28,16 @@ type Model struct {
 	screenSubject string
 }
 
+type page interface {
+	Init() tea.Cmd
+	Update(tea.Msg) (page, tea.Cmd)
+	View(x, y int) string
+}
+
 func initialModel() Model {
 	m := Model{
 		active: input,
+		page:   newLoadingPage(),
 
 		list:  newList(),
 		input: newTextarea(),
@@ -42,6 +50,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
 		initialFetch,
+		m.page.Init(),
 	)
 }
 

@@ -54,5 +54,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 	}
 
+	// always update the main screen
+	newModel, cmd := m.page.Update(msg)
+	m.page = newModel
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }

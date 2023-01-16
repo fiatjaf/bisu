@@ -1,6 +1,8 @@
 package main
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+)
 
 const (
 	listWidth = 15
@@ -38,7 +40,7 @@ func (m Model) View() string {
 				Width(screenWidth).
 				BorderStyle(lipgloss.RoundedBorder()).
 				BorderForeground(screenBorderColor).
-				Render("loading "+m.screenSubject),
+				Render(m.page.View(screenWidth, screenHeight)),
 		),
 		lipgloss.JoinHorizontal(lipgloss.Center,
 			lipgloss.NewStyle().
