@@ -19,13 +19,11 @@ func main() {
 		log.Fatal("failed to parse config: " + err.Error())
 	}
 
-	s := InitStore(config.DataDir)
-	nr = norad2.New(s, norad2.Options{
-		FallbackRelays: config.FallbackRelays,
-		AlwaysCheck: []string{
-			"wss://relay.minds.com/nostr/v1/ws",
-		},
-		SafeRelays: config.SafeRelays,
+	store := InitStore(config.DataDir)
+	nr = norad2.New(store, norad2.Options{
+		FallbackRelays: []string{"wss://nostr-pub.wellorder.net"},
+		AlwaysCheck:    []string{},
+		SafeRelays:     []string{},
 	})
 
 	f, err := tea.LogToFile("debug.log", "debug")
