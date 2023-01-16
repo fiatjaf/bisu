@@ -1,1 +1,1 @@
-nchat: nostr chat
+bisu: bubbletea interface for stuff, a nostr TUI client
