@@ -10,13 +10,20 @@ import (
 )
 
 var (
-	nr     *norad2.Core
-	store  *Store
-	config *Config
+	nr      *norad2.Core
+	store   *Store
+	config  *Config
+	program *tea.Program
 )
 
 func main() {
-	var err error
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
 	config, err = handleConfig()
 	if err != nil {
 		log.Fatal("failed to parse config: " + err.Error())
@@ -36,20 +43,9 @@ func main() {
 		SafeRelays:     config.SafeRelays,
 	})
 
-	m := initialModel()
-	log.Print("x")
-	m.homefeed = nr.GetCachedHomeFeedEvents(config.PublicKey, 99999999999999, 100)
-	log.Print("y")
-	p := tea.NewProgram(m)
+	program = tea.NewProgram(initialModel())
 
-	f, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println("fatal:", err)
-		os.Exit(1)
-	}
-	defer f.Close()
-
-	if _, err := p.Run(); err != nil {
+	if _, err := program.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}

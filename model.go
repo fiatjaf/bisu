@@ -13,7 +13,7 @@ type activeView uint
 
 const (
 	input activeView = iota
-	list
+	sidebar
 	screen
 )
 
@@ -24,18 +24,20 @@ type Model struct {
 	active activeView
 	page   page
 
-	list  table.Model
-	input textarea.Model
+	sidebar table.Model
+	input   textarea.Model
+
+	homefeed *feedPage
 
 	screenSubject string
-
-	homefeed []*nostr.Event
 }
 
 type page interface {
 	Init() tea.Cmd
 	Update(tea.Msg) (page, tea.Cmd)
 	View(x, y int) string
+	Focus()
+	Blur()
 }
 
 func initialModel() Model {
@@ -43,8 +45,10 @@ func initialModel() Model {
 		active: input,
 		page:   newLoadingPage(),
 
-		list:  newList(),
-		input: newTextarea(),
+		sidebar: newList(),
+		input:   newTextarea(),
+
+		homefeed: newFeedPage("Home Feed", []*nostr.Event{}),
 	}
 
 	return m
@@ -53,7 +57,7 @@ func initialModel() Model {
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
-		initialFetch,
+		initialFetch(m),
 		m.page.Init(),
 	)
 }

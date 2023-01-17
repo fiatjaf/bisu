@@ -13,7 +13,7 @@ const (
 
 func (m Model) View() string {
 	listBorderColor := activeBorderColor
-	if m.active != list {
+	if m.active != sidebar {
 		listBorderColor = inactiveBorderColor
 	}
 	screenBorderColor := activeBorderColor
@@ -21,8 +21,8 @@ func (m Model) View() string {
 		screenBorderColor = inactiveBorderColor
 	}
 
-	m.list.UpdateViewport()
-	m.list.SetHeight((m.height * 80 / 100) - 7)
+	m.sidebar.UpdateViewport()
+	m.sidebar.SetHeight((m.height * 80 / 100) - 7)
 	screenHeight := (m.height * 80 / 100) - 5
 	screenWidth := (m.width * 100 / 100) - 10 - listWidth
 	m.input.SetHeight(m.height * 20 / 100)
@@ -34,7 +34,7 @@ func (m Model) View() string {
 				MarginLeft(2).
 				BorderStyle(lipgloss.RoundedBorder()).
 				BorderForeground(listBorderColor).
-				Render(m.list.View()),
+				Render(m.sidebar.View()),
 			lipgloss.NewStyle().
 				Height(screenHeight).
 				Width(screenWidth).

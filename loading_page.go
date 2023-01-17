@@ -36,3 +36,6 @@ func (lp *loadingPage) Update(msg tea.Msg) (page, tea.Cmd) {
 	lp.sp = sp
 	return lp, cmd
 }
+
+func (lp *loadingPage) Focus() {}
+func (lp *loadingPage) Blur()  {}

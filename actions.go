@@ -8,8 +8,18 @@ import (
 	"github.com/nbd-wtf/go-nostr"
 )
 
-func initialFetch() tea.Msg {
-	return nil
+func initialFetch(m Model) func() tea.Msg {
+	return func() tea.Msg {
+		go func() {
+			for event := range nr.SubscribeHomeFeed(context.Background(), config.PublicKey) {
+				program.Send(event)
+			}
+		}()
+
+		events := nr.GetCachedHomeFeedEvents(config.PublicKey, 99999999999999, 100)
+		homefeed, _ := m.homefeed.Update(events)
+		return homefeed
+	}
 }
 
 func publishNote(text string) tea.Cmd {

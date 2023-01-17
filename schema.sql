@@ -1,44 +1,46 @@
 CREATE TABLE IF NOT EXISTS relay_scores (
-  pubkey TEXT,
-  url TEXT,
-  score INT,
+  pubkey TEXT NOT NULL,
+  url TEXT NOT NULL,
+  score INT NOT NULL,
 
   UNIQUE (pubkey, url)
 );
 
 CREATE TABLE IF NOT EXISTS events (
-  id TEXT PRIMARY KEY,
-  body BLOB
+  id TEXT NOT NULL,
+  body BLOB NOT NULL,
+
+  PRIMARY KEY (id) ON CONFLICT IGNORE
 );
 
 CREATE TABLE IF NOT EXISTS profile_events (
-  pubkey TEXT PRIMARY KEY,
-  id TEXT,
-  date INTEGER,
+  pubkey TEXT NOT NULL,
+  id TEXT NOT NULL,
+  date INTEGER NOT NULL,
 
-  UNIQUE (pubkey, id)
+  PRIMARY KEY (pubkey, id) ON CONFLICT IGNORE
 );
 
 CREATE INDEX IF NOT EXISTS idx_profile_events_date ON profile_events (date);
 
 CREATE TABLE IF NOT EXISTS reply_events (
-  root TEXT,
-  id TEXT,
-  date INTEGER,
+  root TEXT NOT NULL,
+  id TEXT NOT NULL,
+  date INTEGER NOT NULL,
 
-  UNIQUE (root, id)
+  PRIMARY KEY (root, id) ON CONFLICT IGNORE
 );
 
 CREATE INDEX IF NOT EXISTS idx_reply_events_date ON reply_events (date);
 
 CREATE TABLE IF NOT EXISTS replaceable_events (
-  pubkey TEXT,
-  kind INTEGER,
-  id TEXT,
+  pubkey TEXT NOT NULL,
+  kind INTEGER NOT NULL,
+  id TEXT NOT NULL,
 
-  UNIQUE (pubkey, kind)
+  PRIMARY KEY (pubkey, kind) ON CONFLICT IGNORE
 );
 
 CREATE TABLE IF NOT EXISTS follows (
-  pubkey TEXT
+  pubkey TEXT PRIMARY KEY
 );

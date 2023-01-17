@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/nbd-wtf/go-nostr"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -12,7 +13,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case error:
-		log.Print(msg.Error())
+		log.Printf("error msg: %s", msg.Error())
+	case *nostr.Event:
+		newModel, cmd := m.homefeed.Update(msg)
+		m.homefeed = newModel.(*feedPage)
+		cmds = append(cmds, cmd)
+	case page:
+		m.page = msg
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -20,16 +27,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "tab":
 			switch m.active {
 			case input:
-				m.active = list
+				m.active = sidebar
 				m.input.Blur()
-				m.list.Focus()
-			case list:
-				m.active = input
-				m.list.Blur()
-				m.input.Focus()
+				m.sidebar.Focus()
+			case sidebar:
+				m.active = screen
+				m.sidebar.Blur()
+				m.page.Focus()
 			case screen:
-				m.active = list
-				m.list.Focus()
+				m.active = input
+				m.page.Blur()
+				m.input.Focus()
 			}
 		case "esc":
 			m.active = input
@@ -58,15 +66,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 					}
 				}
-			case list:
-				newModel, cmd := m.list.Update(msg)
-				m.list = newModel
+			case sidebar:
+				newModel, cmd := m.sidebar.Update(msg)
+				m.sidebar = newModel
 				cmds = append(cmds, cmd)
 
 				switch msg.String() {
 				case "enter":
 					// select from list of channels
-					m.list.Blur()
+					m.sidebar.Blur()
 					m.active = screen
 					m.screenSubject = newModel.SelectedRow()[0]
 				}
