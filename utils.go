@@ -2,61 +2,24 @@ package main
 
 import (
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/nbd-wtf/go-nostr"
 )
 
 func insertItemIntoDescendingList(sortedArray []list.Item, event item) []list.Item {
 	start := 0
 	end := len(sortedArray) - 1
-	midPoint := 0
+	var mid int
 	position := start
 
 	if end < 0 {
 		return []list.Item{event}
 	} else if event.CreatedAt.Before(sortedArray[end].(item).CreatedAt) {
-		position = end + 1
-	} else if !event.CreatedAt.Before(sortedArray[start].(item).CreatedAt) {
-		position = start + 1
-	} else {
-		for {
-			if end <= start+1 {
-				position = end
-				break
-			}
-			midPoint = int(start + (end-start)/2)
-			if sortedArray[midPoint].(item).CreatedAt.After(event.CreatedAt) {
-				start = midPoint
-			} else if sortedArray[midPoint].(item).CreatedAt.Before(event.CreatedAt) {
-				end = midPoint
-			} else {
-				position = midPoint
-				break
-			}
-		}
-	}
-
-	if sortedArray[position-1].(item).ID != event.ID {
+		return append(sortedArray, event)
+	} else if event.CreatedAt.After(sortedArray[start].(item).CreatedAt) {
 		newArr := make([]list.Item, len(sortedArray)+1)
-		copy(newArr[:position], sortedArray[:position])
-		newArr[position] = event
-		copy(newArr[position+1:], sortedArray[position:])
+		newArr[0] = event
+		copy(newArr[1:], sortedArray)
 		return newArr
-	}
-
-	return sortedArray
-}
-
-func insertEventIntoDescendingList(sortedArray []*nostr.Event, event *nostr.Event) []*nostr.Event {
-	start := 0
-	end := len(sortedArray) - 1
-	midPoint := 0
-	position := start
-
-	if end < 0 {
-		position = 0
-	} else if event.CreatedAt.Before(sortedArray[end].CreatedAt) {
-		position = end + 1
-	} else if !event.CreatedAt.Before(sortedArray[start].CreatedAt) {
+	} else if event.CreatedAt.Equal(sortedArray[start].(item).CreatedAt) {
 		position = start
 	} else {
 		for {
@@ -64,20 +27,20 @@ func insertEventIntoDescendingList(sortedArray []*nostr.Event, event *nostr.Even
 				position = end
 				break
 			}
-			midPoint = int(start + (end-start)/2)
-			if sortedArray[midPoint].CreatedAt.After(event.CreatedAt) {
-				start = midPoint
-			} else if sortedArray[midPoint].CreatedAt.Before(event.CreatedAt) {
-				end = midPoint
+			mid = int(start + (end-start)/2)
+			if sortedArray[mid].(item).CreatedAt.After(event.CreatedAt) {
+				start = mid
+			} else if sortedArray[mid].(item).CreatedAt.Before(event.CreatedAt) {
+				end = mid
 			} else {
-				position = midPoint
+				position = mid
 				break
 			}
 		}
 	}
 
-	if sortedArray[position].ID != event.ID {
-		newArr := make([]*nostr.Event, len(sortedArray)+1)
+	if len(sortedArray) <= position || sortedArray[position].(item).ID != event.ID {
+		newArr := make([]list.Item, len(sortedArray)+1)
 		copy(newArr[:position], sortedArray[:position])
 		newArr[position] = event
 		copy(newArr[position+1:], sortedArray[position:])
