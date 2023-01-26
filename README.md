@@ -1,1 +1,1 @@
-bisu: bubbletea interface for stuff, a nostr TUI client
+bubbletea interface for stuff
