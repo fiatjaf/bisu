@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
+	"log"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nbd-wtf/go-nostr"
 )
 
-func initialFetch(m Model) func() tea.Msg {
+func initialFetch(m *Model) func() tea.Msg {
 	return func() tea.Msg {
 		go func() {
 			for event := range nr.SubscribeHomeFeed(context.Background(), config.PublicKey) {
+				log.Print("event: ", []any{event}, " ", event.ID[0:3])
 				program.Send(event)
 			}
 		}()

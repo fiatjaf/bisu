@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nbd-wtf/go-nostr"
@@ -34,41 +32,41 @@ func newFeedPage(title string, events []*nostr.Event) *feedPage {
 		items[i] = item{event}
 	}
 
-	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
+	l := list.New(items, newNoteItemDelegate(), 0, 0)
 	l.DisableQuitKeybindings()
+	l.Styles.Title = l.Styles.Title.Background(styles.blue)
 	l.Title = title
-	log.Print(l.VisibleItems())
 
 	return &feedPage{
 		l: l,
 	}
 }
 
-func (fp feedPage) View(x, y int) string {
+func (fp *feedPage) View(x, y int) string {
 	fp.l.SetWidth(x)
 	fp.l.SetHeight(y)
 
 	return fp.l.View()
 }
 
-func (fp feedPage) Init() tea.Cmd {
+func (fp *feedPage) Init() tea.Cmd {
 	return nil
 }
 
-func (fp *feedPage) Update(msg tea.Msg) (page, tea.Cmd) {
+func (fp *feedPage) Update(msg tea.Msg) (Page, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case []*nostr.Event:
-		items := fp.l.Items()
-		for _, event := range msg {
-			items = insertItemIntoDescendingList(items, item{event})
+		items := make([]list.Item, len(msg))
+		for i, evt := range msg {
+			items[i] = item{evt}
 		}
 		cmd = fp.l.SetItems(items)
-		log.Print(cmd)
-		log.Print(items)
 	case *nostr.Event:
-		cmd = fp.l.SetItems(insertItemIntoDescendingList(fp.l.Items(), item{msg}))
+		before := fp.l.Items()
+		after := insertItemIntoDescendingList(before, item{msg})
+		cmd = fp.l.SetItems(after)
 	}
 
 	if fp.focused {

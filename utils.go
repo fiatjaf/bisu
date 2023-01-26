@@ -4,6 +4,20 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 )
 
+func takeFirst[S any](seq []S, n int) []S {
+	if len(seq) < n {
+		return seq
+	}
+	return seq[0:n]
+}
+
+func takeFirstString(seq string, n int) string {
+	if len(seq) < n {
+		return seq
+	}
+	return seq[0:n]
+}
+
 func insertItemIntoDescendingList(sortedArray []list.Item, event item) []list.Item {
 	start := 0
 	end := len(sortedArray) - 1
@@ -39,7 +53,7 @@ func insertItemIntoDescendingList(sortedArray []list.Item, event item) []list.It
 		}
 	}
 
-	if len(sortedArray) <= position || sortedArray[position].(item).ID != event.ID {
+	if sortedArray[position].(item).ID != event.ID {
 		newArr := make([]list.Item, len(sortedArray)+1)
 		copy(newArr[:position], sortedArray[:position])
 		newArr[position] = event

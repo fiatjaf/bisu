@@ -32,6 +32,6 @@ func handleCommand(text string) (tea.Cmd, error) {
 		for _, url := range relays {
 			store.IncrementRelayScoreForPubkey(config.PublicKey, url, 1)
 		}
-		return nil
+		return UpdateFollows
 	}, nil
 }

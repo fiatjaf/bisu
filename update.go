@@ -3,48 +3,64 @@ package main
 import (
 	"log"
 	"strings"
+	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nbd-wtf/go-nostr"
 )
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+var mutex sync.Mutex
+
+type SingletonCommand int
+
+const (
+	UpdateFollows SingletonCommand = iota
+)
+
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case error:
 		log.Printf("error msg: %s", msg.Error())
 	case *nostr.Event:
+		mutex.Lock()
+		defer mutex.Unlock()
 		newModel, cmd := m.homefeed.Update(msg)
 		m.homefeed = newModel.(*feedPage)
 		cmds = append(cmds, cmd)
-	case page:
+	case Page:
 		m.page = msg
+	case SingletonCommand:
+		switch msg {
+		case UpdateFollows:
+			m.sidebar.Update(msg)
+		}
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "tab":
 			switch m.active {
-			case input:
-				m.active = sidebar
+			case Input:
+				m.active = Sidebar
 				m.input.Blur()
-				m.sidebar.Focus()
-			case sidebar:
-				m.active = screen
-				m.sidebar.Blur()
+				m.sidebar.table.Focus()
+			case Sidebar:
+				m.active = Screen
+				m.sidebar.table.Blur()
 				m.page.Focus()
-			case screen:
-				m.active = input
+			case Screen:
+				m.active = Input
 				m.page.Blur()
 				m.input.Focus()
 			}
 		case "esc":
-			m.active = input
+			m.active = Input
 			m.input.Focus()
 		default:
 			switch m.active {
-			case input:
+			case Input:
 				newModel, cmd := m.input.Update(msg)
 				m.input = newModel
 				cmds = append(cmds, cmd)
@@ -66,16 +82,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 					}
 				}
-			case sidebar:
-				newModel, cmd := m.sidebar.Update(msg)
-				m.sidebar = newModel
+			case Sidebar:
+				newModel, cmd := m.sidebar.table.Update(msg)
+				m.sidebar.table = newModel
 				cmds = append(cmds, cmd)
 
 				switch msg.String() {
 				case "enter":
 					// select from list of channels
-					m.sidebar.Blur()
-					m.active = screen
+					m.sidebar.table.Blur()
+					m.active = Screen
 					m.screenSubject = newModel.SelectedRow()[0]
 				}
 			}

@@ -66,6 +66,13 @@ func TestInsertIntoSortedList(t *testing.T) {
 	if arr[0].(item).ID != "g" || arr[6].(item).ID != "_" || arr[3].(item).ID != "c" {
 		t.Fatal("g should come first, 0 last and c should be the fourth: ", printableSortedArray(arr))
 	}
+	arr = insertItemIntoDescendingList(arr, item{&nostr.Event{ID: "z", CreatedAt: time.Unix(7, 0)}})
+	if len(arr) != 8 {
+		t.Fatal("arr should have eight elements")
+	}
+	if arr[0].(item).ID != "z" {
+		t.Fatal("z should come first: ", printableSortedArray(arr))
+	}
 }
 
 func printableSortedArray(arr []list.Item) []string {
@@ -73,7 +80,7 @@ func printableSortedArray(arr []list.Item) []string {
 	for i, it := range arr {
 		v := "nil"
 		if it != nil {
-			v = it.(item).ID
+			v = it.(item).ID[0:3]
 		}
 		p[i] = v
 	}

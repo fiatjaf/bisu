@@ -2,29 +2,28 @@ package main
 
 import (
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nbd-wtf/go-nostr"
 )
 
-type activeView uint
+type ActiveView uint
 
 const (
-	input activeView = iota
-	sidebar
-	screen
+	Input = iota
+	Sidebar
+	Screen
 )
 
 type Model struct {
 	width  int
 	height int
 
-	active activeView
-	page   page
+	active ActiveView
+	page   Page
 
-	sidebar table.Model
+	sidebar *SidebarModel
 	input   textarea.Model
 
 	homefeed *feedPage
@@ -32,56 +31,32 @@ type Model struct {
 	screenSubject string
 }
 
-type page interface {
+type Page interface {
 	Init() tea.Cmd
-	Update(tea.Msg) (page, tea.Cmd)
+	Update(tea.Msg) (Page, tea.Cmd)
 	View(x, y int) string
 	Focus()
 	Blur()
 }
 
-func initialModel() Model {
-	m := Model{
-		active: input,
+func initialModel() *Model {
+	return &Model{
+		active: Input,
 		page:   newLoadingPage(),
 
-		sidebar: newList(),
+		sidebar: newSidebar(),
 		input:   newTextarea(),
 
-		homefeed: newFeedPage("Home Feed", []*nostr.Event{}),
+		homefeed: newFeedPage("home", []*nostr.Event{}),
 	}
-
-	return m
 }
 
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
 		initialFetch(m),
 		m.page.Init(),
 	)
-}
-
-func newList() table.Model {
-	t := table.New(
-		table.WithColumns([]table.Column{{Title: "channels", Width: listWidth}}),
-	)
-
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
-		Bold(false)
-	t.SetStyles(s)
-
-	t.SetRows([]table.Row{})
-
-	return t
 }
 
 func newTextarea() textarea.Model {

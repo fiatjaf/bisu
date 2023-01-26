@@ -11,18 +11,18 @@ const (
 	inactiveBorderColor = lipgloss.Color("238")
 )
 
-func (m Model) View() string {
+func (m *Model) View() string {
 	listBorderColor := activeBorderColor
-	if m.active != sidebar {
+	if m.active != Sidebar {
 		listBorderColor = inactiveBorderColor
 	}
 	screenBorderColor := activeBorderColor
-	if m.active != screen {
+	if m.active != Screen {
 		screenBorderColor = inactiveBorderColor
 	}
 
-	m.sidebar.UpdateViewport()
-	m.sidebar.SetHeight((m.height * 80 / 100) - 7)
+	m.sidebar.table.UpdateViewport()
+	m.sidebar.table.SetHeight((m.height * 80 / 100) - 7)
 	screenHeight := (m.height * 80 / 100) - 5
 	screenWidth := (m.width * 100 / 100) - 10 - listWidth
 	m.input.SetHeight(m.height * 20 / 100)
@@ -34,7 +34,7 @@ func (m Model) View() string {
 				MarginLeft(2).
 				BorderStyle(lipgloss.RoundedBorder()).
 				BorderForeground(listBorderColor).
-				Render(m.sidebar.View()),
+				Render(m.sidebar.table.View()),
 			lipgloss.NewStyle().
 				Height(screenHeight).
 				Width(screenWidth).

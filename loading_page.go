@@ -31,7 +31,7 @@ func (lp loadingPage) Init() tea.Cmd {
 	return lp.sp.Tick
 }
 
-func (lp *loadingPage) Update(msg tea.Msg) (page, tea.Cmd) {
+func (lp *loadingPage) Update(msg tea.Msg) (Page, tea.Cmd) {
 	sp, cmd := lp.sp.Update(msg)
 	lp.sp = sp
 	return lp, cmd

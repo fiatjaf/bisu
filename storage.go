@@ -43,6 +43,7 @@ func (s *Store) IncrementRelayScoreForPubkey(pubkey string, relay string, score 
 		pubkey, relay, score)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("failed to save relay score: %s", err.Error())
+		return err
 	}
 	return nil
 }
@@ -52,6 +53,7 @@ func (s *Store) GetTopRelaysForPubkey(pubkey string, limit int) []string {
 	err := s.db.Select(&relays, "SELECT url FROM relay_scores WHERE pubkey = $1 LIMIT $2", pubkey, limit)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("failed to get top relays: %s", err.Error())
+		return nil
 	}
 	return relays
 }
@@ -175,9 +177,12 @@ func (s *Store) GetProfileEvents(pubkey string, until int, limit int) []*nostr.E
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("failed to profile events: %s", err.Error())
 	}
-	events := make([]*nostr.Event, len(ids))
-	for i, id := range ids {
-		events[i] = s.GetEvent(context.Background(), id)
+	events := make([]*nostr.Event, 0, len(ids))
+	for _, id := range ids {
+		evt := s.GetEvent(context.Background(), id)
+		if evt != nil {
+			events = append(events, evt)
+		}
 	}
 	return events
 }
@@ -190,9 +195,12 @@ func (s *Store) GetReplies(id string, until int, limit int) []*nostr.Event {
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("failed to get replies: %s", err.Error())
 	}
-	events := make([]*nostr.Event, len(ids))
-	for i, id := range ids {
-		events[i] = s.GetEvent(context.Background(), id)
+	events := make([]*nostr.Event, 0, len(ids))
+	for _, id := range ids {
+		evt := s.GetEvent(context.Background(), id)
+		if evt != nil {
+			events = append(events, evt)
+		}
 	}
 	return events
 }
@@ -210,6 +218,7 @@ func (s *Store) GetLatestTimestampForReplies(id string) *time.Time {
 	err := s.db.Get(&last, "SELECT min(date) FROM reply_events WHERE root = $1", id)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("failed to get latest date for replies: %s", err.Error())
+		return nil
 	}
 	ts := time.Unix(last, 0)
 	return &ts
@@ -220,8 +229,10 @@ func (s *Store) GetLatestTimestampForProfile(pubkey string) *time.Time {
 	err := s.db.Get(&last, "SELECT min(date) FROM profile_events WHERE pubkey = $1", pubkey)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("failed to get latest date for profile: %s", err.Error())
+		return nil
 	}
 	ts := time.Unix(last, 0)
+	log.Print("latest ", pubkey, " ", ts.Unix())
 	return &ts
 }
 
