@@ -21,7 +21,7 @@ type Store struct {
 	db *sqlx.DB
 }
 
-func InitStore(datadir string) *Store {
+func initStore(datadir string) *Store {
 	dbpath := filepath.Join(datadir, "bisu")
 	db, err := sqlx.Connect("sqlite3", "file:"+dbpath+"?cache=shared")
 	if err != nil && err != sql.ErrNoRows {

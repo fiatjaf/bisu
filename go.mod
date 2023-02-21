@@ -6,7 +6,6 @@ require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.1
 	github.com/charmbracelet/lipgloss v0.6.0
-	github.com/fiatjaf/norad2 v0.0.0-00010101000000-000000000000
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/mitchellh/go-homedir v1.1.0
@@ -40,5 +39,3 @@ require (
 	golang.org/x/term v0.1.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 )
-
-replace github.com/fiatjaf/norad2 => /home/fiatjaf/comp/norad2

@@ -6,12 +6,11 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/fiatjaf/norad2"
 )
 
 var (
-	nr      *norad2.Core
 	store   *Store
+	pool    *relayPool
 	config  *Config
 	program *tea.Program
 )
@@ -29,7 +28,7 @@ func main() {
 		log.Fatal("failed to parse config: " + err.Error())
 	}
 
-	store = InitStore(config.DataDir)
+	store = initStore(config.DataDir)
 	for _, f := range config.Following {
 		store.FollowKey(config.PublicKey, f.Key)
 		for _, url := range f.Relays {
@@ -37,11 +36,7 @@ func main() {
 		}
 	}
 
-	nr = norad2.New(store, norad2.Options{
-		FallbackRelays: config.FallbackRelays,
-		AlwaysCheck:    []string{},
-		SafeRelays:     config.SafeRelays,
-	})
+	pool = newRelayPool()
 
 	program = tea.NewProgram(initialModel())
 

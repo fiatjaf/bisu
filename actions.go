@@ -12,13 +12,13 @@ import (
 func initialFetch(m *Model) func() tea.Msg {
 	return func() tea.Msg {
 		go func() {
-			for event := range nr.SubscribeHomeFeed(context.Background(), config.PublicKey) {
+			for event := range SubscribeHomeFeed(context.Background(), config.PublicKey) {
 				log.Print("event: ", []any{event}, " ", event.ID[0:3])
 				program.Send(event)
 			}
 		}()
 
-		events := nr.GetCachedHomeFeedEvents(config.PublicKey, 99999999999999, 100)
+		events := GetCachedHomeFeedEvents(config.PublicKey, 99999999999999, 100)
 		homefeed, _ := m.homefeed.Update(events)
 		return homefeed
 	}
@@ -39,6 +39,6 @@ func publishNote(text string) tea.Cmd {
 			return err
 		}
 
-		return nr.PublishToRelays(context.Background(), evt, config.WriteableRelays)
+		return PublishToRelays(context.Background(), evt, config.WriteableRelays)
 	}
 }
