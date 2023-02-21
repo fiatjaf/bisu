@@ -12,7 +12,7 @@ type SidebarModel struct {
 
 func newSidebar() *SidebarModel {
 	t := table.New(
-		table.WithColumns([]table.Column{{Title: "channels", Width: listWidth}}),
+		table.WithColumns([]table.Column{{Title: "feeds", Width: listWidth}}),
 	)
 
 	st := table.DefaultStyles()
