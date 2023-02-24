@@ -28,6 +28,12 @@ func (m *Model) View() string {
 	m.input.SetHeight(m.height * 20 / 100)
 	m.input.SetWidth((m.width * 100 / 100) - 4)
 
+	feedStyle := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(screenBorderColor)
+
+	verticalFrameSize, horizontalFrameSize := feedStyle.GetFrameSize()
+
 	return lipgloss.JoinVertical(lipgloss.Center,
 		lipgloss.JoinHorizontal(lipgloss.Left,
 			lipgloss.NewStyle().
@@ -35,12 +41,7 @@ func (m *Model) View() string {
 				BorderStyle(lipgloss.RoundedBorder()).
 				BorderForeground(listBorderColor).
 				Render(m.sidebar.table.View()),
-			lipgloss.NewStyle().
-				Height(screenHeight).
-				Width(screenWidth).
-				BorderStyle(lipgloss.RoundedBorder()).
-				BorderForeground(screenBorderColor).
-				Render(m.page.View(screenWidth, screenHeight)),
+			feedStyle.Render(m.page.View(screenWidth-horizontalFrameSize, screenHeight-verticalFrameSize)),
 		),
 		lipgloss.JoinHorizontal(lipgloss.Center,
 			lipgloss.NewStyle().
