@@ -40,7 +40,7 @@ func newNoteItemDelegate() *NoteItemDelegate {
 				Align(lipgloss.Right).
 				Foreground(styles.dimmed),
 			TextStyle: lipgloss.NewStyle().
-				Padding(0, 5, 0, 2),
+				Padding(0, 0, 0, 2),
 		},
 	}
 
