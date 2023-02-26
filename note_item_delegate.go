@@ -123,6 +123,7 @@ func (nid *NoteItemDelegate) Render(w io.Writer, m list.Model, index int, li lis
 
 	fmt.Fprint(w,
 		noteStyles.TextStyle.
+			Width(m.Width()).
 			Render(text),
 	)
 }
