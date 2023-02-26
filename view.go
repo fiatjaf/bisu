@@ -5,8 +5,7 @@ import (
 )
 
 const (
-	listWidth = 15
-
+	listWidth           = 15
 	activeBorderColor   = lipgloss.Color("255")
 	inactiveBorderColor = lipgloss.Color("238")
 )
@@ -29,6 +28,8 @@ func (m *Model) View() string {
 	m.input.SetWidth((m.width * 100 / 100) - 4)
 
 	feedStyle := lipgloss.NewStyle().
+		Width(screenWidth).
+		Height(screenHeight).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(screenBorderColor)
 
