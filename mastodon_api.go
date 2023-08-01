@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"html"
-	"strings"
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
@@ -12,7 +10,7 @@ import (
 )
 
 type Account struct {
-	ID                  string   `json:"iD"`
+	ID                  string   `json:"id"`
 	Acct                string   `json:"acct"`
 	Avatar              string   `json:"avatar"`
 	AvatarStatic        string   `json:"avatarStatic"`
@@ -113,7 +111,7 @@ type ToAccountOpts struct {
 
 func (p Profile) toAccount(ctx context.Context, opts *ToAccountOpts) (*Account, error) {
 	account := Account{
-		ID:                  p.event.PubKey,
+		ID:                  p.pubkey,
 		Acct:                p.NIP05,
 		Avatar:              p.Picture,
 		AvatarStatic:        p.Picture,
@@ -135,7 +133,7 @@ func (p Profile) toAccount(ctx context.Context, opts *ToAccountOpts) (*Account, 
 		Roles:               []string{},
 		Source:              nil,
 		StatusesCount:       0,
-		URL:                 "http://" + srv.Addr + "/users/" + p.event.PubKey,
+		URL:                 "http://" + srv.Addr + "/users/" + p.pubkey,
 		Username:            p.handle(),
 	}
 
@@ -154,18 +152,14 @@ func (p Profile) toAccount(ctx context.Context, opts *ToAccountOpts) (*Account, 
 }
 
 func toMention(ctx context.Context, pubkey string) Mention {
-	profile, err := loadProfile(ctx, pubkey)
-	if err == nil {
-		var account *Account
-		if profile != nil {
-			account, err = profile.toAccount(ctx, nil)
-			if err == nil {
-				return Mention{
-					Id:       account.ID,
-					Acct:     account.Acct,
-					Username: account.Username,
-					URL:      account.URL,
-				}
+	profile := loadProfile(ctx, pubkey)
+	if profile != nil {
+		if account, err := profile.toAccount(ctx, nil); err == nil {
+			return Mention{
+				Id:       account.ID,
+				Acct:     account.Acct,
+				Username: account.Username,
+				URL:      account.URL,
 			}
 		}
 	}
@@ -179,170 +173,170 @@ func toMention(ctx context.Context, pubkey string) Mention {
 	}
 }
 
-func toStatus(ctx context.Context, event *nostr.Event) (*Status, error) {
-	profile, err := loadProfile(ctx, event.PubKey)
-	if err != nil {
-		return nil, err
-	}
-
-	var account *Account
-	if profile != nil {
-		account, err = profile.toAccount(ctx, nil)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	replyTag := event.Tags.GetFirst([]string{"e", ""})
-	var inReplyToId *string
-	if replyTag != nil {
-		inReplyToId = &(*replyTag)[1]
-	}
-
-	mentionedPubkeys := make(map[string]bool, len(event.Tags))
-	for _, tag := range event.Tags {
-		if tag[0] == "p" {
-			mentionedPubkeys[tag[1]] = true
-		}
-	}
-
-	html, links, firstURL := parseNoteContent(event.Content)
-	mediaLinks := getMediaLinks(links)
-
-	mentions := make([]Mention, len(mentionedPubkeys))
-	for pubkey := range mentionedPubkeys {
-		mentions[i] = toMention(ctx, pubkey)
-	}
-
-	var card *PreviewCard
-	if firstURL != "" {
-		card, err = unfurlCardCached(ctx.firstURL)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	content := buildInlineRecipients(mentions) + html
-
-	cw := findCWTag(event)
-	subject := findSubjectTag(event)
-
-	return &Status{
-		Id:                 event.ID,
-		Account:            account,
-		Card:               card,
-		Content:            content,
-		CreatedAt:          event.CreatedAt.Time().Format(time.RFC3339),
-		InReplyToId:        inReplyToId,
-		InReplyToAccountId: nil,
-		Sensitive:          cw != nil,
-		SpoilerText:        cw[1],
-		Visibility:         "public",
-		Language:           "",
-		RepliesCount:       0,
-		ReblogsCount:       0,
-		FavouritesCount:    0,
-		Favourited:         false,
-		Reblogged:          false,
-		Muted:              false,
-		Bookmarked:         false,
-		Reblog:             nil,
-		Application:        nil,
-		MediaAttachments:   renderAttachments(mediaLinks),
-		Mentions:           mentions,
-		Tags:               nil,
-		Emojis:             toEmojis(event),
-		Poll:               nil,
-		URI:                "http://" + srv.Addr + "/posts/" + event.ID,
-		URL:                "http://" + srv.Addr + "/posts/" + event.ID,
-	}, nil
-}
-
-func buildInlineRecipients(mentions []map[string]string) string {
-	if len(mentions) == 0 {
-		return ""
-	}
-
-	elements := make([]string, len(mentions))
-	for i, mention := range mentions {
-		username := mention["username"]
-		if nip19.BECH32_REGEX.MatchString(username) {
-			username = username[:8]
-		}
-		elements[i] = fmt.Sprintf(`<a href="%s" class="u-url mention" rel="ugc">@<span>%s</span></a>`, mention["url"], username)
-	}
-
-	return fmt.Sprintf(`<span class="recipients-inline">%s </span>`, strings.Join(elements, " "))
-}
-
-func renderAttachments(mediaLinks []MediaLink) []map[string]interface{} {
-	attachments := make([]map[string]interface{}, len(mediaLinks))
-	for i, link := range mediaLinks {
-		baseType := strings.Split(link.MimeType, "/")[0]
-		attachmentType := attachmentTypeSchema.Parse(baseType).(string)
-
-		attachments[i] = map[string]interface{}{
-			"id":          link.URL,
-			"type":        attachmentType,
-			"url":         link.URL,
-			"preview_url": link.URL,
-			"remote_url":  nil,
-			"meta":        map[string]interface{}{},
-			"description": "",
-			"blurhash":    nil,
-		}
-	}
-
-	return attachments
-}
-
-func unfurlCard(url string) (*PreviewCard, error) {
-	fmt.Printf("Unfurling %s...\n", url)
-	result, err := unfurl(url, unfurl.Options{
-		Fetch:   fetch,
-		Follow:  2,
-		Timeout: Time.Seconds(1),
-		Size:    1024 * 1024,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	card := &PreviewCard{
-		Type:         result.OEmbed.Type,
-		URL:          result.CanonicalURL,
-		Title:        result.OEmbed.Title,
-		Description:  result.OpenGraph.Description,
-		AuthorName:   result.OEmbed.AuthorName,
-		AuthorURL:    result.OEmbed.AuthorURL,
-		ProviderName: result.OEmbed.ProviderName,
-		ProviderURL:  result.OEmbed.ProviderURL,
-		HTML:         sanitizeHTML(result.OEmbed.HTML),
-		Width:        result.OEmbed.Width,
-		Height:       result.OEmbed.Height,
-		Image:        result.OEmbed.Thumbnails[0].URL,
-		EmbedURL:     "",
-		Blurhash:     nil,
-	}
-
-	return card, nil
-}
-
-func unfurlCardCached(url string) (*PreviewCard, error) {
-	cached, ok := previewCache.Get(url)
-	if ok {
-		return cached.(*PreviewCard), nil
-	}
-
-	card, err := unfurlCard(url)
-	if err != nil {
-		return nil, err
-	}
-
-	previewCache.Set(url, card)
-
-	return card, nil
-}
+//	func toStatus(ctx context.Context, event *nostr.Event) (*Status, error) {
+//		profile, err := loadProfile(ctx, event.PubKey)
+//		if err != nil {
+//			return nil, err
+//		}
+//
+//		var account *Account
+//		if profile != nil {
+//			account, err = profile.toAccount(ctx, nil)
+//			if err != nil {
+//				return nil, err
+//			}
+//		}
+//
+//		replyTag := event.Tags.GetFirst([]string{"e", ""})
+//		var inReplyToId *string
+//		if replyTag != nil {
+//			inReplyToId = &(*replyTag)[1]
+//		}
+//
+//		mentionedPubkeys := make(map[string]bool, len(event.Tags))
+//		for _, tag := range event.Tags {
+//			if tag[0] == "p" {
+//				mentionedPubkeys[tag[1]] = true
+//			}
+//		}
+//
+//		html, links, firstURL := parseNoteContent(event.Content)
+//		mediaLinks := getMediaLinks(links)
+//
+//		mentions := make([]Mention, len(mentionedPubkeys))
+//		for pubkey := range mentionedPubkeys {
+//			mentions[i] = toMention(ctx, pubkey)
+//		}
+//
+//		var card *PreviewCard
+//		if firstURL != "" {
+//			card, err = unfurlCardCached(ctx.firstURL)
+//			if err != nil {
+//				return nil, err
+//			}
+//		}
+//
+//		content := buildInlineRecipients(mentions) + html
+//
+//		cw := findCWTag(event)
+//		subject := findSubjectTag(event)
+//
+//		return &Status{
+//			Id:                 event.ID,
+//			Account:            account,
+//			Card:               card,
+//			Content:            content,
+//			CreatedAt:          event.CreatedAt.Time().Format(time.RFC3339),
+//			InReplyToId:        inReplyToId,
+//			InReplyToAccountId: nil,
+//			Sensitive:          cw != nil,
+//			SpoilerText:        cw[1],
+//			Visibility:         "public",
+//			Language:           "",
+//			RepliesCount:       0,
+//			ReblogsCount:       0,
+//			FavouritesCount:    0,
+//			Favourited:         false,
+//			Reblogged:          false,
+//			Muted:              false,
+//			Bookmarked:         false,
+//			Reblog:             nil,
+//			Application:        nil,
+//			MediaAttachments:   renderAttachments(mediaLinks),
+//			Mentions:           mentions,
+//			Tags:               nil,
+//			Emojis:             toEmojis(event),
+//			Poll:               nil,
+//			URI:                "http://" + srv.Addr + "/posts/" + event.ID,
+//			URL:                "http://" + srv.Addr + "/posts/" + event.ID,
+//		}, nil
+//	}
+//
+//	func buildInlineRecipients(mentions []map[string]string) string {
+//		if len(mentions) == 0 {
+//			return ""
+//		}
+//
+//		elements := make([]string, len(mentions))
+//		for i, mention := range mentions {
+//			username := mention["username"]
+//			if nip19.BECH32_REGEX.MatchString(username) {
+//				username = username[:8]
+//			}
+//			elements[i] = fmt.Sprintf(`<a href="%s" class="u-url mention" rel="ugc">@<span>%s</span></a>`, mention["url"], username)
+//		}
+//
+//		return fmt.Sprintf(`<span class="recipients-inline">%s </span>`, strings.Join(elements, " "))
+//	}
+//
+//	func renderAttachments(mediaLinks []MediaLink) []map[string]interface{} {
+//		attachments := make([]map[string]interface{}, len(mediaLinks))
+//		for i, link := range mediaLinks {
+//			baseType := strings.Split(link.MimeType, "/")[0]
+//			attachmentType := attachmentTypeSchema.Parse(baseType).(string)
+//
+//			attachments[i] = map[string]interface{}{
+//				"id":          link.URL,
+//				"type":        attachmentType,
+//				"url":         link.URL,
+//				"preview_url": link.URL,
+//				"remote_url":  nil,
+//				"meta":        map[string]interface{}{},
+//				"description": "",
+//				"blurhash":    nil,
+//			}
+//		}
+//
+//		return attachments
+//	}
+//
+//	func unfurlCard(url string) (*PreviewCard, error) {
+//		fmt.Printf("Unfurling %s...\n", url)
+//		result, err := unfurl(url, unfurl.Options{
+//			Fetch:   fetch,
+//			Follow:  2,
+//			Timeout: Time.Seconds(1),
+//			Size:    1024 * 1024,
+//		})
+//		if err != nil {
+//			return nil, err
+//		}
+//
+//		card := &PreviewCard{
+//			Type:         result.OEmbed.Type,
+//			URL:          result.CanonicalURL,
+//			Title:        result.OEmbed.Title,
+//			Description:  result.OpenGraph.Description,
+//			AuthorName:   result.OEmbed.AuthorName,
+//			AuthorURL:    result.OEmbed.AuthorURL,
+//			ProviderName: result.OEmbed.ProviderName,
+//			ProviderURL:  result.OEmbed.ProviderURL,
+//			HTML:         sanitizeHTML(result.OEmbed.HTML),
+//			Width:        result.OEmbed.Width,
+//			Height:       result.OEmbed.Height,
+//			Image:        result.OEmbed.Thumbnails[0].URL,
+//			EmbedURL:     "",
+//			Blurhash:     nil,
+//		}
+//
+//		return card, nil
+//	}
+//
+//	func unfurlCardCached(url string) (*PreviewCard, error) {
+//		cached, ok := previewCache.Get(url)
+//		if ok {
+//			return cached.(*PreviewCard), nil
+//		}
+//
+//		card, err := unfurlCard(url)
+//		if err != nil {
+//			return nil, err
+//		}
+//
+//		previewCache.Set(url, card)
+//
+//		return card, nil
+//	}
 
 func toEmojis(event *nostr.Event) []Emoji {
 	emojiTags := make([][]string, 0, len(event.Tags))

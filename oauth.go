@@ -47,6 +47,3 @@ func createTokenHandler(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:   int64(nostr.Now()),
 	})
 }
-
-func appCredentialsHandler(w http.ResponseWriter, r *http.Request) {
-}

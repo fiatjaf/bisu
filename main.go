@@ -1,27 +1,102 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
+	"github.com/arriqaaq/flashdb"
+	"github.com/mitchellh/go-homedir"
+	"github.com/nbd-wtf/go-nostr"
+	"github.com/nbd-wtf/go-nostr/nip19"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
 )
 
 var (
-	log = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	srv http.Server
+	log     = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	srv     http.Server
+	profile *Profile
+	sk      string
+	flash   *flashdb.FlashDB
 )
 
 func main() {
-	mux := http.NewServeMux()
+	// load default stuff
+	datadir, _ := homedir.Expand("~/.config/bisu")
+	os.MkdirAll(datadir, 0700)
+	path := filepath.Join(datadir, "key")
+	b, err := ioutil.ReadFile(path)
+	save := false
+	if err != nil {
+		scanner := bufio.NewScanner(os.Stdin)
+		save = true
+		fmt.Printf("paste your private key: ")
+		if scanner.Scan() {
+			text := scanner.Text()
+			prefix, value, _ := nip19.Decode(text)
+			if prefix == "nsec" {
+				text = value.(string)
+			}
+			b, _ = hex.DecodeString(text)
+		} else {
+			log.Fatal().Err(err).Msg("can't can't read from stdin")
+			return
+		}
+	}
+	if len(b) != 32 {
+		log.Fatal().Err(err).Str("path", path).Msg("private key is not 32 bytes")
+		return
+	}
+	if save {
+		os.WriteFile(path, b, 0600)
+	}
+	sk = hex.EncodeToString(b)
+	pk, err := nostr.GetPublicKey(sk)
+	if err != nil {
+		log.Fatal().Err(err).Str("key", sk).Msg("private key is invalid")
+		return
+	}
 
+	// start flashdb
+	flash, err = flashdb.New(&flashdb.Config{Path: filepath.Join(datadir, "flash.db"), EvictionInterval: 10})
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to start flashdb")
+		return
+	}
+
+	// initialize stuff
+	initializeDataloaders()
+
+	// load user profile
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	profile = loadProfile(ctx, pk)
+	cancel()
+	if profile == nil {
+		// generate a new profile
+		event := &nostr.Event{
+			Content:   `{}`,
+			CreatedAt: nostr.Now(),
+			Kind:      0,
+		}
+		event.Sign(sk)
+		profile = &Profile{
+			pubkey: pk,
+			event:  event,
+		}
+	}
+
+	// routes
+	mux := http.NewServeMux()
 	// 	mux.HandleFunc("/api/v1/streaming", streamingHandler)
 	// 	mux.HandleFunc("/api/v1/streaming/", streamingHandler)
 	// 	mux.HandleFunc("/users/:username", actorHandler)
@@ -32,8 +107,12 @@ func main() {
 	mux.HandleFunc("/oauth/token", createTokenHandler)
 	mux.HandleFunc("/oauth/revoke", constantHandler(map[string]any{}))
 	mux.HandleFunc("/oauth/authorize", oauthHandler)
-	//	mux.HandleFunc("/api/v1/acccounts", createAccountHandler)
-	//	mux.HandleFunc("/api/v1/accounts/verify_credentials", requireAuth, verifyCredentialsHandler)
+	mux.HandleFunc("/api/v1/acccounts",
+		constantHandler(map[string]string{
+			"error": "this is meant to be run locally, not logged in from the external world",
+		}),
+	)
+	mux.HandleFunc("/api/v1/accounts/verify_credentials", verifyCredentialsHandler)
 	//	mux.HandleFunc("/api/v1/accounts/update_credentials", requireAuth, updateCredentialsHandler)
 	//	mux.HandleFunc("/api/v1/accounts/search", accountSearchHandler)
 	//	mux.HandleFunc("/api/v1/accounts/lookup", accountLookupHandler)

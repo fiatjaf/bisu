@@ -68,3 +68,15 @@ func createAppHandler(w http.ResponseWriter, r *http.Request) {
 		VapidKey:     "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
 	})
 }
+
+func appCredentialsHandler(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(app{
+		ID:           "2",
+		Name:         "bisu",
+		Website:      "https://_/",
+		RedirectURI:  "urn:ietf:wg:oauth:2.0:oob",
+		ClientID:     "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+		ClientSecret: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+		VapidKey:     "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+	})
+}
