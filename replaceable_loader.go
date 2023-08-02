@@ -13,6 +13,16 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+func loadReplaceableEvent(ctx context.Context, pubkey string, kind int) *nostr.Event {
+	// it's an external user
+	thunk := replaceableLoaders[kind].Load(ctx, pubkey)
+	if evt, err := thunk(); err != nil {
+		return nil
+	} else {
+		return evt
+	}
+}
+
 var REPLACEABLE_CACHE_TTL = int64((time.Hour * 18).Seconds())
 
 var replaceableLoaders = make(map[int]*dataloader.Loader[string, *nostr.Event])

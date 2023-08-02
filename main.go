@@ -123,7 +123,7 @@ func main() {
 	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}", statusHandler)
 	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}/favourite", favouriteHandler)
 	//	mux.HandleFunc("/api/v1/statuses", requireAuth, createStatusHandler)
-	//	mux.HandleFunc("/api/v1/timelines/home", requireAuth, homeHandler)
+	mux.HandleFunc("/api/v1/timelines/home", homeHandler)
 	//	mux.HandleFunc("/api/v1/timelines/public", publicHandler)
 	mux.HandleFunc("/api/v1/preferences", constantHandler(map[string]any{
 		"posting:default:visibility": "public",

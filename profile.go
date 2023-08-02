@@ -64,13 +64,3 @@ func loadProfile(ctx context.Context, pubkey string) *Profile {
 	metadataCache.Set(pubkey, metadata, 1)
 	return metadata
 }
-
-func loadReplaceableEvent(ctx context.Context, pubkey string, kind int) *nostr.Event {
-	// it's an external user
-	thunk := replaceableLoaders[kind].Load(ctx, pubkey)
-	if evt, err := thunk(); err != nil {
-		return nil
-	} else {
-		return evt
-	}
-}

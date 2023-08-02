@@ -11,7 +11,6 @@ require (
 	github.com/dgraph-io/ristretto v0.0.0-00010101000000-000000000000
 	github.com/graph-gophers/dataloader/v7 v7.1.0
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/mailru/easyjson v0.7.7
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/muesli/reflow v0.3.0
@@ -20,6 +19,7 @@ require (
 	github.com/rs/zerolog v1.30.0
 	github.com/tidwall/gjson v1.15.0
 	golang.org/x/exp v0.0.0-20221230185412-738e83a70c30
+	mvdan.cc/xurls/v2 v2.5.0
 )
 
 require (
@@ -44,6 +44,7 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect

@@ -6,9 +6,6 @@ import (
 )
 
 func verifyCredentialsHandler(w http.ResponseWriter, r *http.Request) {
-	acct, err := profile.toAccount(r.Context(), &ToAccountOpts{WithSource: true})
-	if err != nil {
-		panic(err)
-	}
+	acct := profile.toAccount(r.Context(), &ToAccountOpts{WithSource: true})
 	json.NewEncoder(w).Encode(acct)
 }
