@@ -42,7 +42,7 @@ func instanceHandler(w http.ResponseWriter, r *http.Request) {
 		ShortDescription: "nostr homeserver",
 		Registrations:    false,
 		MaxTootChars:     90000,
-		Version:          "1",
+		Version:          "2.7.2 (compatible; bisu 0.0.0)",
 		Rules:            []any{},
 		Urls: urls{
 			StreamingAPI: "ws://" + srv.Addr,
