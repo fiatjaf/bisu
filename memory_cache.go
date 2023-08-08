@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/dgraph-io/ristretto"
+	ristretto "github.com/fiatjaf/generic-ristretto"
 )
 
 type hex32Cache[V any] struct {
@@ -37,5 +37,5 @@ func h32(key string) uint64 {
 // this also stores profiles and follow lists of internal users
 var (
 	metadataCache     = newHex32Cache[*Profile](8_000)
-	contactListsCache = newHex32Cache[[]Follow](8_000)
+	contactListsCache = newHex32Cache[*[]Follow](8_000)
 )
