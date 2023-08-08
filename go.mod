@@ -8,13 +8,13 @@ require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.1
 	github.com/charmbracelet/lipgloss v0.6.0
-	github.com/dgraph-io/ristretto v0.0.0-00010101000000-000000000000
+	github.com/dgraph-io/ristretto v0.1.1
 	github.com/graph-gophers/dataloader/v7 v7.1.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/muesli/reflow v0.3.0
-	github.com/nbd-wtf/go-nostr v0.19.5
+	github.com/nbd-wtf/go-nostr v0.20.0
 	github.com/rs/cors v1.9.0
 	github.com/rs/zerolog v1.30.0
 	github.com/tidwall/gjson v1.15.0
@@ -67,5 +67,3 @@ require (
 replace github.com/dgraph-io/ristretto => github.com/aryehlev/ristretto v0.0.0-20230325112030-fd222a1ebb5e
 
 replace github.com/bmatsuo/lmdb-go => github.com/zebedeeio/lmdb-go v0.0.0-20230702134651-580a668feb45
-
-replace github.com/nbd-wtf/go-nostr => /home/fiatjaf/comp/go-nostr
