@@ -2,15 +2,42 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/nbd-wtf/go-nostr"
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	notes := make([]Note, 0, 20)
+	fmt.Println(r.URL)
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit == 0 {
+		limit = 20
+	}
 
-	statuses := make([]*Status, len(notes))
-	for i, note := range notes {
-		statuses[i] = note.toStatus(r.Context())
+	var keys []string
+	if follows := loadContactList(r.Context(), profile.pubkey); follows != nil {
+		keys = make([]string, len(*follows))
+		for i, f := range *follows {
+			keys[i] = f.Pubkey
+		}
+	} else {
+		keys = []string{profile.pubkey}
+	}
+
+	events, err := store.QueryEvents(r.Context(), nostr.Filter{
+		Authors: keys,
+		Limit:   limit,
+	})
+	if err != nil {
+		http.Error(w, "error querying internal db", 500)
+		return
+	}
+
+	statuses := make([]*Status, 0, limit)
+	for evt := range events {
+		statuses = append(statuses, Note{evt}.toStatus(r.Context()))
 	}
 
 	json.NewEncoder(w).Encode(statuses)

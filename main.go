@@ -14,7 +14,12 @@ import (
 	"syscall"
 	"time"
 
+	_ "embed"
+
 	"github.com/arriqaaq/flashdb"
+	"github.com/fiatjaf/khatru/plugins/storage/badgern"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/mitchellh/go-homedir"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip19"
@@ -22,12 +27,18 @@ import (
 	"github.com/rs/zerolog"
 )
 
+//go:embed schema.sql
+var schema string
+
 var (
 	log     = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	srv     http.Server
 	profile *Profile
 	sk      string
 	flash   *flashdb.FlashDB
+	store   badgern.BadgerBackend
+	db      *sqlx.DB
+	serial  = 0
 )
 
 func main() {
@@ -67,6 +78,16 @@ func main() {
 		return
 	}
 
+	// start sqlite
+	if sql, err := sqlx.Open("sqlite3", filepath.Join(datadir, "params.sqlite3")); err != nil {
+		log.Fatal().Err(err).Msg("failed to open sqlite3")
+		return
+	} else {
+		db = sql
+
+		sql.Exec(schema)
+	}
+
 	// start flashdb
 	flash, err = flashdb.New(&flashdb.Config{Path: filepath.Join(datadir, "flash.db"), EvictionInterval: 10})
 	if err != nil {
@@ -74,8 +95,25 @@ func main() {
 		return
 	}
 
-	// initialize stuff
+	// start internal event storage
+	store.Path = filepath.Join(datadir, "events.db")
+	store.MaxLimit = 100000000
+	store.Init()
+
+	// initialize data loaders stuff
 	initializeDataloaders()
+
+	// cleanup old stuff from event storage
+	go func() {
+		ctx := context.Background()
+		sevenMonthsAgo := nostr.Now() - 60*60*24*30*7
+		events, _ := store.QueryEvents(ctx, nostr.Filter{Until: &sevenMonthsAgo})
+		for evt := range events {
+			if evt.PubKey != profile.pubkey {
+				store.DeleteEvent(ctx, evt)
+			}
+		}
+	}()
 
 	// load user profile
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
@@ -94,6 +132,9 @@ func main() {
 			event:  event,
 		}
 	}
+
+	// start listening to relays
+	go startListening()
 
 	// routes
 	mux := http.NewServeMux()
@@ -124,7 +165,7 @@ func main() {
 	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}/favourite", favouriteHandler)
 	//	mux.HandleFunc("/api/v1/statuses", requireAuth, createStatusHandler)
 	mux.HandleFunc("/api/v1/timelines/home", homeHandler)
-	//	mux.HandleFunc("/api/v1/timelines/public", publicHandler)
+	// mux.HandleFunc("/api/v1/timelines/public", publicHandler)
 	mux.HandleFunc("/api/v1/preferences", constantHandler(map[string]any{
 		"posting:default:visibility": "public",
 		"posting:default:sensitive":  false,

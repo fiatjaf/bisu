@@ -1,7 +1,5 @@
 package main
 
-var next = 0
-
 var defaultRelays = []string{
 	"wss://nostr-pub.wellorder.net",
 	"wss://nos.lol",

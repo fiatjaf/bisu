@@ -6,10 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/arriqaaq/flashdb"
 	"github.com/graph-gophers/dataloader/v7"
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/nbd-wtf/go-nostr/nson"
 	"golang.org/x/exp/slices"
 )
 
@@ -64,7 +62,7 @@ func batchLoadReplaceableEvents(
 	relayFilters := make(map[string]*nostr.Filter) // { [relayUrl]: filter }
 
 	for i, pubkey := range pubkeys {
-		evt := loadReplaceableEventFromCache(ctx, pubkey, kind)
+		evt := loadReplaceableEventFromLocalStore(ctx, pubkey, kind)
 		if evt != nil {
 			results[i] = &dataloader.Result[*nostr.Event]{Data: evt}
 			continue
@@ -108,10 +106,7 @@ func batchLoadReplaceableEvents(
 	defer close(newEvents)
 	go func() {
 		for evt := range newEvents {
-			b, _ := nson.Marshal(evt)
-			flash.Update(func(txn *flashdb.Tx) error {
-				return txn.SetEx(replaceableKey(evt.Kind, evt.PubKey), b, REPLACEABLE_CACHE_TTL)
-			})
+			store.SaveEvent(ctx, evt)
 		}
 	}()
 
@@ -151,8 +146,8 @@ func determineRelaysToQuery(ctx context.Context, pubkey string, kind int) []stri
 	}
 
 	for len(relays) < 3 {
-		next++
-		relays = append(relays, defaultRelays[next%len(defaultRelays)])
+		serial++
+		relays = append(relays, defaultRelays[serial%len(defaultRelays)])
 	}
 
 	// save attempts
@@ -216,7 +211,7 @@ func batchReplaceableRelayQueries(
 						!slices.Contains(profileRelays, sub.Relay.URL) {
 						// associate relays
 						go func() {
-							saveLastFetched(bg, evt, sub.Relay.URL)
+							saveLastFetched(bg, evt.PubKey, sub.Relay.URL)
 							grabRelaysFromEvent(bg, evt)
 						}()
 					}
@@ -242,19 +237,13 @@ func batchReplaceableRelayQueries(
 	return all
 }
 
-func loadReplaceableEventFromCache(ctx context.Context, pubkey string, kind int) *nostr.Event {
-	k := replaceableKey(kind, pubkey)
-	evt := &nostr.Event{}
-	flash.View(func(txn *flashdb.Tx) error {
-		if val, _ := txn.Get(k); val != "" {
-			err := nson.Unmarshal(val, evt)
-			if err != nil {
-				evt = nil
-			}
-		} else {
-			evt = nil
-		}
+func loadReplaceableEventFromLocalStore(ctx context.Context, pubkey string, kind int) *nostr.Event {
+	c, err := store.QueryEvents(ctx, nostr.Filter{Kinds: []int{kind}, Authors: []string{pubkey}})
+	if err != nil {
+		log.Warn().Err(err).Int("kind", kind).Str("pubkey", pubkey).
+			Msg("failed to load replaceable event")
 		return nil
-	})
+	}
+	evt := <-c
 	return evt
 }

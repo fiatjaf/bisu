@@ -26,12 +26,6 @@ type Profile struct {
 	validatedNip05 *string `json:"-"`
 }
 
-type Follow struct {
-	Pubkey  string `json:"pubkey"`
-	Relay   string `json:"relay"`
-	Petname string `json:"petname"`
-}
-
 func (p Profile) handle() string {
 	handle := p.Name
 	if handle == "" {

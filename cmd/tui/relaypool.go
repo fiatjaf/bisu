@@ -71,7 +71,10 @@ func (pool *relayPool) publish(ctx context.Context, url string, event nostr.Even
 		return fmt.Errorf("failed to ensure relay: %s", url)
 	}
 
-	status := relay.Publish(ctx, event)
+	status, err := relay.Publish(ctx, event)
+	if err != nil {
+		return fmt.Errorf("publish error: %w", err)
+	}
 	if status == nostr.PublishStatusFailed {
 		return fmt.Errorf("publish failed: %d", status)
 	}
