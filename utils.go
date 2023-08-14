@@ -12,13 +12,7 @@ import (
 // shortUint64 is the same as short(), but returns the result as a uint64 number
 func shortUint64(idOrPubkey string) uint64 {
 	length := len(idOrPubkey)
-	if length < 8 {
-		panic("shortUint64 called with bad value")
-	}
-	b, err := hex.DecodeString(idOrPubkey[length-8:])
-	if err != nil {
-		panic(err)
-	}
+	b, _ := hex.DecodeString(idOrPubkey[length-8:])
 	return uint64(binary.BigEndian.Uint32(b))
 }
 
