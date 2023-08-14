@@ -266,48 +266,53 @@ func setIfMoreRecent(ctx context.Context, pubkey string, relay string, column st
 func startListening() {
 	ctx := context.Background()
 
-	if follows := loadContactList(ctx, profile.pubkey); follows != nil {
-		log.Debug().Int("n", len(*follows)).Msg("listening to notes from all the people we follow")
-		queries := make(map[string]nostr.Filter)
-		for _, follow := range *follows {
-			relays := fetchOutboxRelaysForUser(ctx, follow.Pubkey, 3, false)
-			for _, r := range relays {
-				filter, ok := queries[r]
-				if !ok {
-					filter.Kinds = []int{1}
-					filter.Authors = make([]string, 0, 20)
-					filter.Limit = 200
-					now := nostr.Now()
-					filter.Since = &now
-				}
-				filter.Authors = append(filter.Authors, follow.Pubkey)
-				lastFetched := getLastFetched(ctx, follow.Pubkey, r)
-				if lastFetched != nil && *lastFetched < *filter.Since {
-					filter.Since = lastFetched
-				}
-				queries[r] = filter
+	pfollows := loadContactList(ctx, profile.pubkey)
+	var follows []Follow
+	if pfollows != nil {
+		follows = *pfollows
+	}
+	follows = append(follows, Follow{Pubkey: profile.pubkey})
+
+	log.Debug().Int("n", len(follows)).Msg("listening to notes from all the people we follow")
+	queries := make(map[string]nostr.Filter)
+	for _, follow := range follows {
+		relays := fetchOutboxRelaysForUser(ctx, follow.Pubkey, 3, false)
+		for _, r := range relays {
+			filter, ok := queries[r]
+			if !ok {
+				filter.Kinds = []int{1}
+				filter.Authors = make([]string, 0, 20)
+				filter.Limit = 200
+				now := nostr.Now()
+				filter.Since = &now
 			}
+			filter.Authors = append(filter.Authors, follow.Pubkey)
+			lastFetched := getLastFetched(ctx, follow.Pubkey, r)
+			if lastFetched != nil && *lastFetched < *filter.Since {
+				filter.Since = lastFetched
+			}
+			queries[r] = filter
 		}
+	}
 
-		// dispatch all queries
-		for r, filter := range queries {
-			go func(r string, filter nostr.Filter) {
-				relay, err := pool.EnsureRelay(r)
-				if err != nil {
-					log.Warn().Err(err).Str("relay", r).Msg("failed to connect")
-					return
-				}
-				sub, err := relay.Subscribe(ctx, nostr.Filters{filter}, nostr.WithLabel("background"))
-				if err != nil {
-					log.Warn().Err(err).Str("relay", r).Stringer("filter", filter).Msg("failed to subscribe")
-					return
-				}
+	// dispatch all queries
+	for r, filter := range queries {
+		go func(r string, filter nostr.Filter) {
+			relay, err := pool.EnsureRelay(r)
+			if err != nil {
+				log.Warn().Err(err).Str("relay", r).Msg("failed to connect")
+				return
+			}
+			sub, err := relay.Subscribe(ctx, nostr.Filters{filter}, nostr.WithLabel("background"))
+			if err != nil {
+				log.Warn().Err(err).Str("relay", r).Stringer("filter", filter).Msg("failed to subscribe")
+				return
+			}
 
-				for evt := range sub.Events {
-					log.Debug().Stringer("event", evt).Msg("got event")
-					store.SaveEvent(ctx, evt)
-				}
-			}(r, filter)
-		}
+			for evt := range sub.Events {
+				log.Debug().Stringer("event", evt).Msg("got event")
+				store.SaveEvent(ctx, evt)
+			}
+		}(r, filter)
 	}
 }

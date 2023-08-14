@@ -22,9 +22,8 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		for i, f := range *follows {
 			keys[i] = f.Pubkey
 		}
-	} else {
-		keys = []string{profile.pubkey}
 	}
+	keys = append(keys, profile.pubkey)
 
 	events, err := store.QueryEvents(r.Context(), nostr.Filter{
 		Authors: keys,
