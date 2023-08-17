@@ -159,11 +159,7 @@ func saveLastFetched(ctx context.Context, pubkey string, relay string) {
 		return
 	}
 
-	_, err := db.ExecContext(
-		ctx,
-		`SELECT set_if_more_recent($1, $2, 'last_fetched_success', $3)`,
-		pubkey, nostr.NormalizeURL(relay), nostr.Now())
-	if err != nil {
+	if err := setIfMoreRecent(ctx, pubkey, relay, "last_fetched_success", nostr.Now()); err != nil {
 		log.Error().Err(err).Str("pubkey", pubkey).Str("relay", relay).Msg("failed to save last attempted")
 	}
 }
@@ -173,71 +169,43 @@ func getLastFetched(ctx context.Context, pubkey string, relay string) *nostr.Tim
 }
 
 func saveNprofileHint(ctx context.Context, pubkey string, relay string, when nostr.Timestamp) {
-	_, err := db.ExecContext(
-		ctx,
-		`SELECT set_if_more_recent($1, $2, 'last_hint_nprofile', $3)`,
-		pubkey, nostr.NormalizeURL(relay), when)
-	if err != nil {
+	if err := setIfMoreRecent(ctx, pubkey, relay, "last_hint_nprofile", when); err != nil {
 		log.Error().Err(err).Str("pubkey", pubkey).Str("relay", relay).Msg("failed to save nprofile hint")
 	}
 }
 
 func saveNip05Hint(ctx context.Context, pubkey string, relay string, when nostr.Timestamp) {
-	_, err := db.ExecContext(
-		ctx,
-		`SELECT set_if_more_recent($1, $2, 'last_hint_nip05', $3)`,
-		pubkey, nostr.NormalizeURL(relay), when)
-	if err != nil {
+	if err := setIfMoreRecent(ctx, pubkey, relay, "last_hint_nip05", when); err != nil {
 		log.Error().Err(err).Str("pubkey", pubkey).Str("relay", relay).Msg("failed to save nip05 hint")
 	}
 }
 
 func saveTagHint(ctx context.Context, pubkey string, relay string, when nostr.Timestamp) {
-	_, err := db.ExecContext(
-		ctx,
-		`SELECT set_if_more_recent($1, $2, 'last_hint_tag', $3)`,
-		pubkey, relay, when)
-	if err != nil {
+	if err := setIfMoreRecent(ctx, pubkey, relay, "last_hint_tag", when); err != nil {
 		log.Error().Err(err).Str("pubkey", pubkey).Str("relay", relay).Msg("failed to save tag hint")
 	}
 }
 
 func saveNip65Outbox(ctx context.Context, pubkey string, relay string, when nostr.Timestamp) {
-	_, err := db.ExecContext(
-		ctx,
-		`SELECT set_if_more_recent($1, $2, 'last_nip65_outbox', $3)`,
-		pubkey, relay, when)
-	if err != nil {
+	if err := setIfMoreRecent(ctx, pubkey, relay, "last_nip65_outbox", when); err != nil {
 		log.Error().Err(err).Str("pubkey", pubkey).Str("relay", relay).Msg("failed to save nip65 outbox")
 	}
 }
 
 func saveNip65Inbox(ctx context.Context, pubkey string, relay string, when nostr.Timestamp) {
-	_, err := db.ExecContext(
-		ctx,
-		`SELECT set_if_more_recent($1, $2, 'last_nip65_inbox', $3)`,
-		pubkey, relay, when)
-	if err != nil {
+	if err := setIfMoreRecent(ctx, pubkey, relay, "last_nip65_inbox", when); err != nil {
 		log.Error().Err(err).Str("pubkey", pubkey).Str("relay", relay).Msg("failed to save nip65 inbox")
 	}
 }
 
 func saveKind3Outbox(ctx context.Context, pubkey string, relay string, when nostr.Timestamp) {
-	_, err := db.ExecContext(
-		ctx,
-		`SELECT set_if_more_recent($1, $2, 'last_kind3_outbox', $3)`,
-		pubkey, relay, when)
-	if err != nil {
+	if err := setIfMoreRecent(ctx, pubkey, relay, "last_kind3_outbox", when); err != nil {
 		log.Error().Err(err).Str("pubkey", pubkey).Str("relay", relay).Msg("failed to save kind3 outbox")
 	}
 }
 
 func saveKind3Inbox(ctx context.Context, pubkey string, relay string, when nostr.Timestamp) {
-	_, err := db.ExecContext(
-		ctx,
-		`SELECT set_if_more_recent($1, $2, 'last_kind3_inbox', $3)`,
-		pubkey, relay, when)
-	if err != nil {
+	if err := setIfMoreRecent(ctx, pubkey, relay, "last_kind3_inbox", when); err != nil {
 		log.Error().Err(err).Str("pubkey", pubkey).Str("relay", relay).Msg("failed to save kind3 inbox")
 	}
 }
@@ -250,7 +218,9 @@ func setIfMoreRecent(ctx context.Context, pubkey string, relay string, column st
 	var current int64
 	err := db.GetContext(ctx, &current,
 		`SELECT `+column+` FROM pubkey_relays WHERE pubkey = $1 AND relay = $2`,
-		pubkey, relay)
+		pubkey,
+		nostr.NormalizeURL(relay),
+	)
 	if err != nil {
 		return err
 	}

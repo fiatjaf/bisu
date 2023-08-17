@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+
+	"github.com/nbd-wtf/go-nostr"
 )
 
 type Follow struct {
-	Pubkey  string `json:"pubkey"`
-	Relay   string `json:"relay"`
-	Petname string `json:"petname"`
+	Pubkey  string
+	Relay   string
+	Petname string
 }
 
 func loadContactList(ctx context.Context, pubkey string) *[]Follow {
@@ -32,4 +34,27 @@ func loadContactList(ctx context.Context, pubkey string) *[]Follow {
 		contactListsCache.Set(pubkey, &follows, 1)
 		return &follows
 	}
+}
+
+func loadRelaysList(ctx context.Context, pubkey string) (read []string, write []string) {
+	if evt := loadReplaceableEvent(ctx, pubkey, 10002); evt != nil {
+		for _, tag := range evt.Tags {
+			if len(tag) < 2 {
+				continue
+			}
+
+			relay := nostr.NormalizeURL(tag[1])
+
+			if len(tag) > 2 && tag[2] == "read" {
+				read = append(read, relay)
+			} else if len(tag) > 2 && tag[2] == "write" {
+				write = append(write, relay)
+			} else if len(tag) == 2 {
+				read = append(read, relay)
+				write = append(write, relay)
+			}
+		}
+	}
+
+	return read, write
 }

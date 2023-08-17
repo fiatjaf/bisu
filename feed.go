@@ -36,7 +36,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	statuses := make([]*Status, 0, limit)
 	for evt := range events {
-		statuses = append(statuses, Note{evt}.toStatus(r.Context()))
+		statuses = append(statuses, toStatus(r.Context(), evt))
 	}
 
 	json.NewEncoder(w).Encode(statuses)

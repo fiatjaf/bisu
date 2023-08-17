@@ -4,6 +4,7 @@ import (
 	"time"
 
 	ristretto "github.com/fiatjaf/generic-ristretto"
+	"github.com/nbd-wtf/go-nostr"
 )
 
 type hex32Cache[V any] struct {
@@ -27,15 +28,10 @@ func (s hex32Cache[V]) SetWithTTL(k string, v V, c int64, d time.Duration) bool 
 	return s.Cache.SetWithTTL(k, v, c, d)
 }
 
-func h32(key string) uint64 {
-	// we get an event id or pubkey as hex,
-	// so just extract the last 8 bytes from it and turn them into a uint64
-	return shortUint64(key)
-}
+func h32(key string) uint64 { return shortUint64(key) }
 
-// caches for replaceable data -- this will be tried before going to redis and fetching replaceable events
-// this also stores profiles and follow lists of internal users
 var (
+	eventCache        = newHex32Cache[*nostr.Event](36_000)
 	metadataCache     = newHex32Cache[*Profile](8_000)
 	contactListsCache = newHex32Cache[*[]Follow](8_000)
 )

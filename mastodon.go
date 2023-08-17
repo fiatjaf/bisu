@@ -123,7 +123,7 @@ type ToAccountOpts struct {
 	WithSource bool
 }
 
-func (p Profile) toAccount(ctx context.Context, opts *ToAccountOpts) *Account {
+func toAccount(ctx context.Context, p *Profile, opts *ToAccountOpts) *Account {
 	createdAt := ""
 	if p.event == nil {
 		createdAt = p.event.CreatedAt.Time().Format(time.RFC3339)
@@ -173,7 +173,7 @@ func (p Profile) toAccount(ctx context.Context, opts *ToAccountOpts) *Account {
 func toMention(ctx context.Context, pubkey string) Mention {
 	profile := loadProfile(ctx, pubkey)
 	if profile != nil {
-		if account := profile.toAccount(ctx, nil); account != nil {
+		if account := toAccount(ctx, profile, nil); account != nil {
 			return Mention{
 				ID:       account.ID,
 				Acct:     account.Acct,
@@ -192,23 +192,23 @@ func toMention(ctx context.Context, pubkey string) Mention {
 	}
 }
 
-func (n Note) toStatus(ctx context.Context) *Status {
-	profile := loadProfile(ctx, n.PubKey)
+func toStatus(ctx context.Context, evt *nostr.Event) *Status {
+	profile := loadProfile(ctx, evt.PubKey)
 
 	var account *Account
 	if profile != nil {
-		account = profile.toAccount(ctx, nil)
+		account = toAccount(ctx, profile, nil)
 	}
 
-	replyTag := n.Tags.GetFirst([]string{"e", ""})
+	replyTag := evt.Tags.GetFirst([]string{"e", ""})
 	var inReplyToId *string
 	if replyTag != nil {
 		inReplyToId = &(*replyTag)[1]
 	}
 
-	mentionedPubkeys := make(map[string]bool, len(n.Tags))
-	mentions := make([]Mention, 0, len(n.Tags))
-	for _, tag := range n.Tags {
+	mentionedPubkeys := make(map[string]bool, len(evt.Tags))
+	mentions := make([]Mention, 0, len(evt.Tags))
+	for _, tag := range evt.Tags {
 		if tag[0] == "p" {
 			pubkey := tag[1]
 			if _, exists := mentionedPubkeys[pubkey]; !exists {
@@ -219,7 +219,7 @@ func (n Note) toStatus(ctx context.Context) *Status {
 	}
 
 	attachments := make([]Attachment, 0, 5)
-	for _, link := range urlMatcher.FindAllString(n.Content, -1) {
+	for _, link := range urlMatcher.FindAllString(evt.Content, -1) {
 		u, err := url.Parse(link)
 		if err != nil {
 			continue
@@ -263,7 +263,7 @@ func (n Note) toStatus(ctx context.Context) *Status {
 		})
 	}
 
-	text := n.Content
+	text := evt.Content
 	if len(mentions) > 0 {
 		elements := make([]string, len(mentions))
 		for i, mention := range mentions {
@@ -276,18 +276,18 @@ func (n Note) toStatus(ctx context.Context) *Status {
 		text = fmt.Sprintf(`<span class="recipients-inline">%s</span>`, strings.Join(elements, " "))
 	}
 
-	cw := n.Tags.GetFirst([]string{"content-warning", ""})
+	cw := evt.Tags.GetFirst([]string{"content-warning", ""})
 	cwText := ""
 	if cw != nil {
 		cwText = (*cw)[1]
 	}
 
 	return &Status{
-		ID:                 n.ID,
+		ID:                 evt.ID,
 		Account:            account,
 		Card:               nil,
 		Content:            text,
-		CreatedAt:          n.CreatedAt.Time().Format(time.RFC3339),
+		CreatedAt:          evt.CreatedAt.Time().Format(time.RFC3339),
 		InReplyToID:        inReplyToId,
 		InReplyToAccountID: nil,
 		Sensitive:          cw != nil,
@@ -306,10 +306,10 @@ func (n Note) toStatus(ctx context.Context) *Status {
 		MediaAttachments:   attachments,
 		Mentions:           mentions,
 		Tags:               nil,
-		Emojis:             toEmojis(n.Event),
+		Emojis:             toEmojis(evt),
 		Poll:               nil,
-		URI:                "http://" + srv.Addr + "/posts/" + n.ID,
-		URL:                "http://" + srv.Addr + "/posts/" + n.ID,
+		URI:                "http://" + srv.Addr + "/posts/" + evt.ID,
+		URL:                "http://" + srv.Addr + "/posts/" + evt.ID,
 	}
 }
 

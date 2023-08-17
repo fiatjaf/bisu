@@ -31,14 +31,15 @@ import (
 var schema string
 
 var (
-	log     = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	srv     http.Server
-	profile *Profile
-	sk      string
-	flash   *flashdb.FlashDB
-	store   badgern.BadgerBackend
-	db      *sqlx.DB
-	serial  = 0
+	log                     = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	srv                     http.Server
+	profile                 *Profile
+	readRelays, writeRelays []string
+	sk                      string
+	flash                   *flashdb.FlashDB
+	store                   badgern.BadgerBackend
+	db                      *sqlx.DB
+	serial                  = 0
 )
 
 func main() {
@@ -115,10 +116,9 @@ func main() {
 		}
 	}()
 
-	// load user profile
+	// load user metadata
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	profile = loadProfile(ctx, pk)
-	cancel()
 	if profile == nil {
 		// generate a new profile
 		event := &nostr.Event{
@@ -132,6 +132,16 @@ func main() {
 			event:  event,
 		}
 	}
+	readRelays, writeRelays = loadRelaysList(ctx, pk)
+	if len(readRelays) == 0 {
+		readRelays = append(readRelays, "wss://nostr.mom")
+		readRelays = append(readRelays, "wss://relayable.org")
+	}
+	if len(writeRelays) == 0 {
+		writeRelays = append(writeRelays, "wss://nostr.mom")
+		writeRelays = append(writeRelays, "wss://nostr-pub.wellorder.net")
+	}
+	cancel()
 
 	// start listening to relays
 	go startListening()
@@ -161,9 +171,9 @@ func main() {
 	//	mux.HandleFunc("/api/v1/accounts/:pubkey{[0-9a-f]{64}}/statuses", accountStatusesHandler)
 	//	mux.HandleFunc("/api/v1/accounts/:pubkey{[0-9a-f]{64}}", accountHandler)
 	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}/context", contextHandler)
-	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}", statusHandler)
 	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}/favourite", favouriteHandler)
-	//	mux.HandleFunc("/api/v1/statuses", requireAuth, createStatusHandler)
+	mux.HandleFunc("/api/v1/statuses", createStatusHandler)
+	mux.HandleFunc("/api/v1/statuses/", getStatusHandler)
 	mux.HandleFunc("/api/v1/timelines/home", homeHandler)
 	// mux.HandleFunc("/api/v1/timelines/public", publicHandler)
 	mux.HandleFunc("/api/v1/preferences", constantHandler(map[string]any{
