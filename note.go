@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
+	"github.com/nbd-wtf/go-nostr/nip10"
 	"mvdan.cc/xurls/v2"
 )
 
@@ -66,7 +67,7 @@ func getStatusHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/v1/statuses/"):]
 	evt := loadEvent(r.Context(), id, nil, nil)
 	if evt == nil {
-		http.Error(w, "couldn't find event", 404)
+		jsonError(w, "couldn't find event", 404)
 		return
 	}
 	status := toStatus(r.Context(), evt)
@@ -91,24 +92,24 @@ type createStatusBody struct {
 }
 
 func createStatusHandler(w http.ResponseWriter, r *http.Request) {
-	body := createStatusBody{}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "invalid request body", 400)
+	data := createStatusBody{}
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		jsonError(w, "invalid request data", 400)
 		return
 	}
 
-	if body.Visibility != "public" {
-		http.Error(w, "only public supported for now", 422)
+	if data.Visibility != "public" {
+		jsonError(w, "only public supported for now", 422)
 		return
 	}
 
-	if body.Poll != nil {
-		http.Error(w, "polls are not supported", 422)
+	if data.Poll != nil {
+		jsonError(w, "polls are not supported", 422)
 		return
 	}
 
-	if len(body.MediaIds) > 0 {
-		http.Error(w, "media uploads not yet supported", 422)
+	if len(data.MediaIds) > 0 {
+		jsonError(w, "media uploads not yet supported", 422)
 		return
 	}
 
@@ -118,25 +119,66 @@ func createStatusHandler(w http.ResponseWriter, r *http.Request) {
 		Tags:      make(nostr.Tags, 0, 4),
 	}
 
-	if body.Sensitive && body.SpoilerText != "" {
-		evt.Tags = append(evt.Tags, nostr.Tag{"content-warning", body.SpoilerText})
-	} else if body.Sensitive {
+	if data.Sensitive && data.SpoilerText != "" {
+		evt.Tags = append(evt.Tags, nostr.Tag{"content-warning", data.SpoilerText})
+	} else if data.Sensitive {
 		evt.Tags = append(evt.Tags, nostr.Tag{"content-warning"})
-	} else if body.SpoilerText != "" {
-		evt.Tags = append(evt.Tags, nostr.Tag{"subject", body.SpoilerText})
+	} else if data.SpoilerText != "" {
+		evt.Tags = append(evt.Tags, nostr.Tag{"subject", data.SpoilerText})
+	}
+
+	if data.InReplyToId != "" {
+		// try to fetch the event we're repĺying to
+		parent := loadEvent(r.Context(), data.InReplyToId, nil, nil)
+		if parent == nil {
+			evt.Tags = append(evt.Tags, nostr.Tag{"e", data.InReplyToId, "reply"})
+		} else {
+			root := nip10.GetThreadRoot(evt.Tags)
+			if root == nil {
+				root = nip10.GetImmediateReply(evt.Tags)
+			}
+			if root != nil {
+				root = &nostr.Tag{"e", (*root)[1], "root"}
+			}
+
+			// copy 'p' tags
+			totalPs := 0
+			for _, tag := range evt.Tags {
+				if len(tag) < 2 {
+					continue
+				}
+				if tag[0] == "p" && totalPs < 4 {
+					// TODO include better hint for p if we have one
+					evt.Tags.AppendUnique(tag)
+					totalPs++
+				}
+			}
+
+			// if root exists
+			// TODO include hints for all of these
+			if root != nil {
+				// include root
+				evt.Tags = append(evt.Tags, nostr.Tag{"e", (*root)[1], "", "root"})
+				// and then the parent as "reply"
+				evt.Tags = append(evt.Tags, nostr.Tag{"e", parent.ID, "", "reply"})
+			} else {
+				// include parent as root
+				evt.Tags = append(evt.Tags, nostr.Tag{"e", parent.ID, "", "root"})
+			}
+		}
 	}
 
 	if err := evt.Sign(sk); err != nil {
-		http.Error(w, "failed to sign event", 500)
+		jsonError(w, "failed to sign event", 500)
 		return
 	}
 
 	if err := store.SaveEvent(r.Context(), &evt); err != nil {
-		http.Error(w, "failed to save event", 500)
+		jsonError(w, "failed to save event", 500)
 		return
 	}
 
-	switch body.Visibility {
+	switch data.Visibility {
 	case "public":
 		for _, relay := range writeRelays {
 			r, err := pool.EnsureRelay(relay)

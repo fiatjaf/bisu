@@ -53,7 +53,7 @@ func instanceHandler(w http.ResponseWriter, r *http.Request) {
 func createAppHandler(w http.ResponseWriter, r *http.Request) {
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "wrong body: "+err.Error(), 400)
+		jsonError(w, "wrong body: "+err.Error(), 400)
 		return
 	}
 	defer r.Body.Close()

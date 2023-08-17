@@ -156,7 +156,7 @@ func toAccount(ctx context.Context, p *Profile, opts *ToAccountOpts) *Account {
 		Username:            p.handle(),
 	}
 
-	if opts.WithSource {
+	if opts != nil && opts.WithSource {
 		account.Source = &Source{
 			Fields:              []any{},
 			Language:            "",

@@ -26,11 +26,12 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	keys = append(keys, profile.pubkey)
 
 	events, err := store.QueryEvents(r.Context(), nostr.Filter{
+		Kinds:   []int{1},
 		Authors: keys,
 		Limit:   limit,
 	})
 	if err != nil {
-		http.Error(w, "error querying internal db", 500)
+		jsonError(w, "error querying internal db", 500)
 		return
 	}
 

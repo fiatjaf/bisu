@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/arriqaaq/flashdb"
@@ -42,4 +44,11 @@ func doneRecently(key string, howOften time.Duration) bool {
 		}
 	})
 	return yes
+}
+
+func jsonError(w http.ResponseWriter, msg string, code int) {
+	v, _ := json.Marshal(struct {
+		Error string `json:"error"`
+	}{msg})
+	http.Error(w, string(v), code)
 }
