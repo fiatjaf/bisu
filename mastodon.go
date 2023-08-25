@@ -273,7 +273,7 @@ func toStatus(ctx context.Context, evt *nostr.Event) *Status {
 			}
 			elements[i] = fmt.Sprintf(`<a href="%s" class="u-url mention" rel="ugc">@<span>%s</span></a>`, mention.URL, username)
 		}
-		text = fmt.Sprintf(`<span class="recipients-inline">%s</span>`, strings.Join(elements, " "))
+		text = fmt.Sprintf(`<span class="recipients-inline">%s</span>`, strings.Join(elements, " ")) + text
 	}
 
 	cw := evt.Tags.GetFirst([]string{"content-warning", ""})

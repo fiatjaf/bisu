@@ -117,6 +117,7 @@ func createStatusHandler(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: nostr.Now(),
 		Kind:      1,
 		Tags:      make(nostr.Tags, 0, 4),
+		Content:   data.Status,
 	}
 
 	if data.Sensitive && data.SpoilerText != "" {
@@ -197,4 +198,6 @@ func createStatusHandler(w http.ResponseWriter, r *http.Request) {
 	case "private":
 	case "direct":
 	}
+
+	json.NewEncoder(w).Encode(toStatus(r.Context(), &evt))
 }
