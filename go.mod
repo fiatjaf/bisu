@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/muesli/reflow v0.3.0
-	github.com/nbd-wtf/go-nostr v0.20.0
+	github.com/nbd-wtf/go-nostr v0.24.1
 	github.com/rs/cors v1.9.0
 	github.com/rs/zerolog v1.30.0
 	github.com/tidwall/gjson v1.15.0
@@ -62,7 +62,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.13.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/puzpuzpuz/xsync v1.5.2 // indirect
+	github.com/puzpuzpuz/xsync/v2 v2.5.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect

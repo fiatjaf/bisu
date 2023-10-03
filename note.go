@@ -49,18 +49,18 @@ func loadEvent(ctx context.Context, id string, relayHints []string, authorHint *
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*4)
-	evt := pool.QuerySingle(ctx, relays, filter)
+	ie := pool.QuerySingle(ctx, relays, filter)
 	cancel()
 
-	if evt != nil {
-		store.SaveEvent(ctx, evt)
-		eventCache.Set(evt.ID, evt, 1)
+	if ie != nil {
+		store.SaveEvent(ctx, ie.Event)
+		eventCache.Set(ie.Event.ID, ie.Event, 1)
 	} else {
 		// cache this even if it's nil so we don't keep trying to fetch it
-		eventCache.SetWithTTL(evt.ID, evt, 1, CACHE_TTL_NOT_FOUND)
+		eventCache.SetWithTTL(ie.Event.ID, ie.Event, 1, CACHE_TTL_NOT_FOUND)
 	}
 
-	return evt
+	return ie.Event
 }
 
 func getStatusHandler(w http.ResponseWriter, r *http.Request) {
