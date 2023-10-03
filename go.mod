@@ -8,6 +8,7 @@ require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.1
 	github.com/charmbracelet/lipgloss v0.6.0
+	github.com/fasthttp/websocket v1.5.3
 	github.com/fiatjaf/generic-ristretto v0.0.1
 	github.com/fiatjaf/khatru v0.0.2
 	github.com/graph-gophers/dataloader/v7 v7.1.0
@@ -24,6 +25,7 @@ require (
 )
 
 require (
+	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/arriqaaq/aol v0.1.2 // indirect
 	github.com/arriqaaq/art v0.1.2 // indirect
 	github.com/arriqaaq/hash v0.1.2 // indirect
@@ -65,8 +67,11 @@ require (
 	github.com/puzpuzpuz/xsync/v2 v2.5.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
+	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasthttp v1.47.0 // indirect
 	go.opencensus.io v0.22.5 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect

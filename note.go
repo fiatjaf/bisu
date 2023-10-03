@@ -113,7 +113,7 @@ func createStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	evt := nostr.Event{
+	evt := &nostr.Event{
 		CreatedAt: nostr.Now(),
 		Kind:      1,
 		Tags:      make(nostr.Tags, 0, 4),
@@ -169,35 +169,18 @@ func createStatusHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := evt.Sign(sk); err != nil {
-		jsonError(w, "failed to sign event", 500)
-		return
-	}
-
-	if err := store.SaveEvent(r.Context(), &evt); err != nil {
-		jsonError(w, "failed to save event", 500)
-		return
-	}
-
 	switch data.Visibility {
 	case "public":
-		for _, relay := range writeRelays {
-			r, err := pool.EnsureRelay(relay)
-			if err != nil {
-				log.Warn().Err(err).Str("relay", relay).Msg("failed to ensure relay when publishing")
-				continue
-			}
-			status, err := r.Publish(r.Context(), evt)
-			if err == nil && status == nostr.PublishStatusSucceeded {
-				log.Debug().Str("id", evt.ID).Str("relay", relay).Msg("event published")
-			} else {
-				log.Warn().Str("id", evt.ID).Str("relay", relay).Err(err).Msg("event probably failed to be published")
-			}
+		var err error
+		evt, err = publish(r.Context(), evt)
+		if err != nil {
+			jsonError(w, err.Error(), 500)
+			return
 		}
 	case "unlisted":
 	case "private":
 	case "direct":
 	}
 
-	json.NewEncoder(w).Encode(toStatus(r.Context(), &evt))
+	json.NewEncoder(w).Encode(toStatus(r.Context(), evt))
 }

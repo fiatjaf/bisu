@@ -41,7 +41,7 @@ func instanceHandler(w http.ResponseWriter, r *http.Request) {
 		Description:      "nostr personal homeserver",
 		ShortDescription: "nostr homeserver",
 		Registrations:    false,
-		MaxTootChars:     90000,
+		MaxTootChars:     900,
 		Version:          "2.7.2 (compatible; bisu 0.0.0)",
 		Rules:            []any{},
 		Urls: urls{

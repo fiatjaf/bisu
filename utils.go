@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash/maphash"
 	"net/http"
 	"time"
+	"unsafe"
 
 	"github.com/arriqaaq/flashdb"
 )
@@ -52,3 +54,5 @@ func jsonError(w http.ResponseWriter, msg string, code int) {
 	}{msg})
 	http.Error(w, string(v), code)
 }
+
+func pointerHasher[V any](_ maphash.Seed, k *V) uint64 { return uint64(uintptr(unsafe.Pointer(k))) }

@@ -147,8 +147,8 @@ func main() {
 
 	// routes
 	mux := http.NewServeMux()
-	// 	mux.HandleFunc("/api/v1/streaming", streamingHandler)
-	// 	mux.HandleFunc("/api/v1/streaming/", streamingHandler)
+	mux.HandleFunc("/api/v1/streaming", streamingHandler)
+	mux.HandleFunc("/api/v1/streaming/", streamingHandler)
 	// 	mux.HandleFunc("/users/:username", actorHandler)
 	// 	mux.HandleFunc("/nodeinfo/:version", nodeInfoSchemaHandler)
 	mux.HandleFunc("/api/v1/instance", instanceHandler)
@@ -163,7 +163,7 @@ func main() {
 		}),
 	)
 	mux.HandleFunc("/api/v1/accounts/verify_credentials", verifyCredentialsHandler)
-	//	mux.HandleFunc("/api/v1/accounts/update_credentials", requireAuth, updateCredentialsHandler)
+	mux.HandleFunc("/api/v1/accounts/update_credentials", updateCredentialsHandler)
 	//	mux.HandleFunc("/api/v1/accounts/search", accountSearchHandler)
 	//	mux.HandleFunc("/api/v1/accounts/lookup", accountLookupHandler)
 	//	mux.HandleFunc("/api/v1/accounts/relationships", relationshipsHandler)
