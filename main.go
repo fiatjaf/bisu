@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -47,7 +46,7 @@ func main() {
 	datadir, _ := homedir.Expand("~/.config/bisu")
 	os.MkdirAll(datadir, 0700)
 	path := filepath.Join(datadir, "key")
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	save := false
 	if err != nil {
 		scanner := bufio.NewScanner(os.Stdin)

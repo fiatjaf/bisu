@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/tidwall/gjson"
@@ -51,7 +51,7 @@ func instanceHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createAppHandler(w http.ResponseWriter, r *http.Request) {
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		jsonError(w, "wrong body: "+err.Error(), 400)
 		return
