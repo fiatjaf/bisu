@@ -63,15 +63,37 @@ func loadEvent(ctx context.Context, id string, relayHints []string, authorHint *
 	return ie.Event
 }
 
-func getStatusHandler(w http.ResponseWriter, r *http.Request) {
+func deleteEvent(ctx context.Context, evt *nostr.Event) error {
+	_, err := publish(ctx, &nostr.Event{
+		Kind:      5,
+		CreatedAt: nostr.Now(),
+		Tags:      nostr.Tags{nostr.Tag{"e", evt.ID}},
+	})
+	if err != nil {
+		return err
+	}
+
+	eventCache.Delete(evt.ID)
+	return store.DeleteEvent(ctx, evt)
+}
+
+func getOrDeleteStatusHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/v1/statuses/"):]
 	evt := loadEvent(r.Context(), id, nil, nil)
 	if evt == nil {
 		jsonError(w, "couldn't find event", 404)
 		return
 	}
-	status := toStatus(r.Context(), evt)
-	json.NewEncoder(w).Encode(status)
+
+	if r.Method == "DELETE" {
+		if err := deleteEvent(r.Context(), evt); err != nil {
+			jsonError(w, "failed to delete: "+err.Error(), 500)
+			return
+		}
+	} else if r.Method == "GET" {
+		status := toStatus(r.Context(), evt)
+		json.NewEncoder(w).Encode(status)
+	}
 }
 
 type createStatusBody struct {

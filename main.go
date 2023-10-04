@@ -16,7 +16,7 @@ import (
 	_ "embed"
 
 	"github.com/arriqaaq/flashdb"
-	"github.com/fiatjaf/khatru/plugins/storage/badgern"
+	"github.com/fiatjaf/khatru/plugins/storage/lmdbn"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mitchellh/go-homedir"
@@ -36,7 +36,7 @@ var (
 	readRelays, writeRelays []string
 	sk                      string
 	flash                   *flashdb.FlashDB
-	store                   badgern.BadgerBackend
+	store                   lmdbn.LMDBBackend
 	db                      *sqlx.DB
 	serial                  = 0
 )
@@ -98,7 +98,10 @@ func main() {
 	// start internal event storage
 	store.Path = filepath.Join(datadir, "events.db")
 	store.MaxLimit = 100000000
-	store.Init()
+	if err := store.Init(); err != nil {
+		log.Fatal().Err(err).Msg("failed to initialize lmdb")
+		return
+	}
 
 	// initialize data loaders stuff
 	initializeDataloaders()
@@ -172,7 +175,7 @@ func main() {
 	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}/context", contextHandler)
 	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}/favourite", favouriteHandler)
 	mux.HandleFunc("/api/v1/statuses", createStatusHandler)
-	mux.HandleFunc("/api/v1/statuses/", getStatusHandler)
+	mux.HandleFunc("/api/v1/statuses/", getOrDeleteStatusHandler)
 	mux.HandleFunc("/api/v1/timelines/home", homeHandler)
 	// mux.HandleFunc("/api/v1/timelines/public", publicHandler)
 	mux.HandleFunc("/api/v1/preferences", constantHandler(map[string]any{

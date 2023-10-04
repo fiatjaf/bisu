@@ -37,7 +37,6 @@ func (p Profile) handle() string {
 
 func loadProfile(ctx context.Context, pubkey string) *Profile {
 	if profile, ok := metadataCache.Get(pubkey); ok {
-		log.Debug().Str("pubkey", pubkey).Msg("profile found on cache")
 		return profile
 	}
 
