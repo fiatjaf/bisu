@@ -30,3 +30,9 @@ var profileRelays = []string{
 var relayListRelays = []string{
 	"wss://purplepag.es",
 }
+
+var searchRelays = []string{
+	"wss://relay.nostr.band",
+	"wss://nostr.wine",
+	"wss://relay.noswhere.com",
+}

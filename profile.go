@@ -40,24 +40,30 @@ func loadProfile(ctx context.Context, pubkey string) *Profile {
 		return profile
 	}
 
-	metadata := &Profile{
-		pubkey: pubkey,
-	}
-
-	if evt := loadReplaceableEvent(ctx, pubkey, 0); evt == nil {
+	metadataEvent := loadReplaceableEvent(ctx, pubkey, 0)
+	if metadataEvent == nil {
 		log.Debug().Str("pubkey", pubkey).Msg("failed to load metadata event, storing nil on cache")
-		metadataCache.SetWithTTL(pubkey, metadata, 1, CACHE_TTL_NOT_FOUND)
+		metadataCache.SetWithTTL(pubkey, &Profile{pubkey: pubkey}, 1, CACHE_TTL_NOT_FOUND)
 		return nil
-	} else {
-		metadata.event = evt
-		if err := json.Unmarshal([]byte(evt.Content), metadata); err != nil {
-			log.Debug().Str("event", evt.String()).Msg("metadata event has invalid json, storing nil on cache")
-			metadataCache.SetWithTTL(pubkey, metadata, 1, CACHE_TTL_NOT_FOUND)
-			return nil
-		}
 	}
 
+	metadata := toProfile(metadataEvent)
 	log.Debug().Interface("profile", metadata).Msg("found metadata, storing on cache")
 	metadataCache.Set(pubkey, metadata, 1)
+	return metadata
+}
+
+func toProfile(metadataEvent *nostr.Event) *Profile {
+	metadata := &Profile{
+		pubkey: metadataEvent.PubKey,
+		event:  metadataEvent,
+	}
+
+	if err := json.Unmarshal([]byte(metadata.event.Content), metadata); err != nil {
+		log.Debug().Str("event", metadata.event.String()).Msg("metadata event has invalid json, storing nil on cache")
+		metadataCache.SetWithTTL(metadata.pubkey, metadata, 1, CACHE_TTL_NOT_FOUND)
+		return nil
+	}
+
 	return metadata
 }
