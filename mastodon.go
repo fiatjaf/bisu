@@ -144,9 +144,14 @@ func toAccount(ctx context.Context, p *Profile, opts *ToAccountOpts) *Account {
 		createdAt = p.event.CreatedAt.Time().Format(time.RFC3339)
 	}
 
+	acct := p.NIP05
+	if acct == "" || p.validatedNip05 == nil {
+		acct, _ = nip19.EncodePublicKey(p.pubkey)
+	}
+
 	account := Account{
 		ID:                  p.pubkey,
-		Acct:                p.NIP05,
+		Acct:                acct,
 		Avatar:              p.Picture,
 		AvatarStatic:        p.Picture,
 		Bot:                 false,
