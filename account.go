@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"sync"
 
 	"github.com/nbd-wtf/go-nostr"
 )
@@ -37,4 +38,22 @@ func updateCredentialsHandler(w http.ResponseWriter, r *http.Request) {
 
 	profile.event = evt
 	json.NewEncoder(w).Encode(toAccount(r.Context(), profile, nil))
+}
+
+func relationshipsHandler(w http.ResponseWriter, r *http.Request) {
+	pubkey := r.URL.Query().Get("pubkey")
+	ids := r.URL.Query()["id[]"]
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(ids))
+	results := make([]*Relationship, len(ids))
+	for i, id := range ids {
+		go func(i int, id string) {
+			results[i] = toRelationship(r.Context(), pubkey, id)
+			wg.Done()
+		}(i, id)
+	}
+
+	wg.Wait()
+	json.NewEncoder(w).Encode(results)
 }

@@ -169,7 +169,7 @@ func main() {
 	mux.HandleFunc("/api/v1/accounts/update_credentials", updateCredentialsHandler)
 	//	mux.HandleFunc("/api/v1/accounts/search", accountSearchHandler)
 	//	mux.HandleFunc("/api/v1/accounts/lookup", accountLookupHandler)
-	//	mux.HandleFunc("/api/v1/accounts/relationships", relationshipsHandler)
+	mux.HandleFunc("/api/v1/accounts/relationships", relationshipsHandler)
 	//	mux.HandleFunc("/api/v1/accounts/:pubkey{[0-9a-f]{64}}/statuses", accountStatusesHandler)
 	//	mux.HandleFunc("/api/v1/accounts/:pubkey{[0-9a-f]{64}}", accountHandler)
 	//	mux.HandleFunc("/api/v1/statuses/:id{[0-9a-f]{64}}/context", contextHandler)
